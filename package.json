@@ -1,0 +1,28 @@
+{
+  "name": "bikuren-backend",
+  "version": "1.0.0",
+  "description": "Backend application for motor bike rental Bikuren",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "backend",
+    "bikuren"
+  ],
+  "author": "Ida Bagus Putu Surya Negara, I Made Krisna Widiatmika",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "dayjs": "^1.11.19",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.16.0",
+    "nodemailer": "^7.0.12",
+    "sequelize": "^6.37.7"
+  }
+}
