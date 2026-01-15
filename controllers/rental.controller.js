@@ -1,9 +1,51 @@
-const Rental = require('../models/Rental');
-const rentalSchema = require('../validations/rental.schema');
+const { Rental, RentalDetail, Bike, User } = require('../models');
+
+const exclude = ['created_at', 'updated_at', 'deleted_at'];
 
 const getRental = async (req, res) => {
     try {
-        const data = await Rental.findAll();
+        const { expand = '' } = req.query ;
+        const includes = [];
+
+        if (expand.includes('user')){
+            includes.push({
+                model: User,
+                as: 'user',
+                attributes: {
+                    exclude : [...exclude, 'password', , 'role']
+                }
+            })
+        };
+
+        if (expand.includes('detail')){
+            const detailExpand = [];
+            if (expand.includes('bike')){
+               detailExpand.push({
+                    model: Bike,
+                    as: 'bike',
+                    attributes: {
+                        exclude
+                    }
+                });
+            }
+            includes.push({
+                model: RentalDetail,
+                as: 'detail',
+                include: detailExpand,
+                attributes: {
+                    exclude
+                }
+            })
+        };
+        
+        const data = await Rental.findAll({
+            include: includes,
+            attributes: {
+                    exclude: ['deleted_at']
+                }
+        });
+
+        if(!data) return res.status(404).json({ message: 'Rental is empty!' });
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -13,7 +55,47 @@ const getRental = async (req, res) => {
 const getRentalById = async (req, res) => {
     try {
         const { id } = req.params
-        const data = await Rental.findByPk(id)
+        const { expand = '' } = req.query;
+        const includes = [];
+
+        if (expand.includes('user')){
+            includes.push({
+                model: User,
+                as: 'user',
+                attributes: {
+                    exclude : [...exclude, 'password', , 'role']
+                }
+            })
+        };
+
+        if (expand.includes('detail')){
+            const detailExpand = [];
+            if (expand.includes('bike')){
+               detailExpand.push({
+                    model: Bike,
+                    as: 'bike',
+                    attributes: {
+                        exclude
+                    }
+                });
+            }
+            includes.push({
+                model: RentalDetail,
+                as: 'detail',
+                include: detailExpand,
+                attributes: {
+                    exclude
+                }
+            })
+        };
+        
+        const data = await Rental.findByPk(id, {
+            include: includes,
+            attributes: {
+                    exclude: ['deleted_at']
+                }
+        });
+        if(!data) return res.status(404).json({ message: 'Rental not found!' })
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -22,10 +104,8 @@ const getRentalById = async (req, res) => {
 
 const createRental = async (req, res) => {
     try {
-        const { error, value } = rentalSchema.validate(req.body);
-        if(error) throw error;
         const data = await Rental.create({
-            ...value,
+            ...req.body,
             user_id: req.user.id,
         });
         res.status(200).json({ 
@@ -39,10 +119,8 @@ const createRental = async (req, res) => {
 
 const updateRentalById = async (req, res) => {
     try {
-        const { error, value } = rentalSchema.validate(req.body);
-        if(error) throw error;
         const { id } = req.params;
-        await Rental.update(value, {
+        await Rental.update(req.body, {
             where: {
                 id,
             }

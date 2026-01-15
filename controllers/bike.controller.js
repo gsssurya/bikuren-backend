@@ -1,9 +1,13 @@
 const Bike = require('../models/Bike');
-const bikeSchema = require ('../validations/bike.schema');
 
 const getBikes = async (req, res) => {
     try {
-        const data = await Bike.findAll();
+        const data = await Bike.findAll({
+            attributes: {
+                exclude: ['deleted_at']
+            }
+        });
+        if(!data) return res.status(404).json({ message: 'Bike is empty!' });
         res.status(200).json(data)
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -13,7 +17,12 @@ const getBikes = async (req, res) => {
 const getBikeById = async (req, res) => {
     try {
         const { id } = req.params;
-        const data = await Bike.findByPk(id);
+        const data = await Bike.findByPk(id, {
+            attributes: {
+                exclude: ['deleted_at']
+            }
+        });
+        if(!data) return res.status(404).json({ message: 'Bike not found!' });
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -22,9 +31,7 @@ const getBikeById = async (req, res) => {
 
 const createBike = async (req, res) => {
     try {
-        const { error, value } = bikeSchema.validate(req.body);
-        if(error) throw error;
-        await Bike.create(value);
+        await Bike.create(req.body);
         res.status(200).json({ message: 'Bike added!' })
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -34,9 +41,7 @@ const createBike = async (req, res) => {
 const updateBikeById = async (req, res) => {
     try {
         const { id } = req.params;
-        const { error, value } = bikeSchema.validate(req.body);
-        if(error) throw error;
-        await Bike.update(value, {
+        await Bike.update(req.body, {
             where: {
                 id,
             }

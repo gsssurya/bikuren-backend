@@ -7,8 +7,8 @@ const sendEmail = async (to, token) => {
     subject: "Your verification account!",
     //text: "Nice nice nice", // Plain-text version of the message
     html: `
-        <p>Kle keren anjayy</p>
-        <a href="https://flowing-lizard-lately.ngrok-free.app//auth/${token}"
+        <p>Trying to verify your email? Please click the button below</p>
+        <a href="https://flowing-lizard-lately.ngrok-free.app/auth/${token}"
         style="
             display:inline-block;
             padding:12px 24px;

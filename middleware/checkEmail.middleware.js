@@ -8,7 +8,7 @@ const checkEmail = async (req, res, next) => {
                 email,
             }
         });
-        if(userExist) return res.status(409).json({ message:'You are already sign up!' });
+        if(userExist) return res.status(409).json({ message:'Your email is already registered!' });
         next();
     } catch (e) {
         next(e);

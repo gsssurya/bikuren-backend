@@ -1,23 +1,19 @@
 const User = require('../models/User');
-const userSchema = require('../validations/user.schema');
-const loginSchema = require('../validations/auth.schema');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/emailMessage.util');
 
 const signUp = async (req, res) => {
     try {
-        const { error, value } = userSchema.validate(req.body);
-        if(error) throw error;
         const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(value.password, salt);
-        value.password = hash;
+        const hash = bcrypt.hashSync(req.body.password, salt);
+        req.body.password = hash;
         var token = jwt.sign(
-            value,
+            req.body,
             process.env.JWT_SECRET,
-            { expiresIn: 120 },
+            { expiresIn: 360 },
         );
-        await sendEmail(value.email, token);
+        await sendEmail(req.body.email, token);
         res.status(200).json({ message: 'To verify, please check your email!' });
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -29,7 +25,7 @@ const authVerify = async (req, res) => {
         const { token } = req.params;
         const decode = jwt.verify(token, process.env.JWT_SECRET);
         const { iat, exp, ...data } = decode;
-        //await User.create(data);
+        await User.create(data);
         res.status(200).json('Verification success!');
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -38,15 +34,13 @@ const authVerify = async (req, res) => {
 
 const signIn = async (req, res) => {
     try {
-        const { error, value } = loginSchema.validate(req.body);
-        if(error) throw error;
         const data = await User.findOne({ 
             where: {
-                email: value.email,
+                email: req.body.email,
             }}
         );
         if(!data) return res.status(404).json({ message: 'Your email is not registered yet!' })
-        const comparePass = bcrypt.compareSync(value.password, data.password);
+        const comparePass = bcrypt.compareSync(req.body.password, data.password);
         if(comparePass) {
             var token = jwt.sign({
                 id: data.id,
@@ -62,8 +56,8 @@ const signIn = async (req, res) => {
                 signed: true
             });
 
-            res.status(200).json({ message: "Sign in success!" })
-
+            res.status(200).json({ message: "Sign in success!" });
+            
         } else {
 
             res.status(400).json({ message: "Incorrect password!" });

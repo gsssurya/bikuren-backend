@@ -3,8 +3,9 @@ const Joi = require('joi');
 const schema = Joi.object({
     total: Joi.number()
         .min(1)
-        .max(1000000000),
-    status: Joi.string(),
+        .max(1000000000)
+        .required(),
+    status: Joi.string()
 });
 
 module.exports = schema;

@@ -1,9 +1,29 @@
+const { Bike } = require('../models');
 const RentalDetail = require('../models/RentalDetail');
-const rentalDetailSchema = require('../validations/rentalDetail.schema');
+
+const exclude = ['created_at', 'updated_at', 'deleted_at'];
 
 const getRentalDetails = async (req, res) => {
     try {
-        const data = await RentalDetail.findAll();
+        const { expand = '' } = req.query;
+        const includes = [];
+
+        if(expand.includes('bike')){
+            includes.push({
+                model: Bike,
+                as: 'bike',
+                attributes: {
+                    exclude
+                }
+            })
+        };
+        const data = await RentalDetail.findAll({
+            include: includes,
+            attributes: {
+                exclude: ['deleted_at']
+            }
+        });
+        if(!data) return res.status(404).json({ message: 'Rental detail is empty!' });
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -13,7 +33,25 @@ const getRentalDetails = async (req, res) => {
 const getRentalDetailById = async (req, res) => {
     try {
         const { id } = req.params;
-        const data = await RentalDetail.findByPk(id);
+        const { expand = '' } = req.query;
+        const includes = [];
+
+        if(expand.includes('bike')){
+            includes.push({
+                model: Bike,
+                as: 'bike',
+                attributes: {
+                    exclude
+                }
+            })
+        };
+        const data = await RentalDetail.findByPk(id, {
+            include: includes,
+            attributes: {
+                exclude: ['deleted_at']
+            }
+        });
+        if(!data) return res.status(404).json({ message: 'Rental detail not found!' })
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -22,9 +60,7 @@ const getRentalDetailById = async (req, res) => {
 
 const createRentalDetail = async (req, res) => {
     try {
-        const { error, value } = rentalDetailSchema.validate(req.body);
-        if(error) throw error;
-        await RentalDetail.create(value);
+        await RentalDetail.create(req.body);
         res.status(200).json({ message: 'Rental detail added!' });
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -34,9 +70,7 @@ const createRentalDetail = async (req, res) => {
 const updateRentalDetail = async (req, res) => {
     try {
         const { id } = req.params;
-        const { error, value } = rentalDetailSchema.validate(req.body);
-        if(error) throw error;
-        await RentalDetail.update(value, {
+        await RentalDetail.update(req.body, {
             where: {
                 id,
             }
