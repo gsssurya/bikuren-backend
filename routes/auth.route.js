@@ -37,7 +37,7 @@ router.post(
 );
 
 router.get(
-    '/:token', 
+    '/:id/:token', 
     guestOnly, 
     authVerify
 );

@@ -43,6 +43,16 @@ const User = sequelize.define(
             values: ['admin', 'member'],
             defaultValue: 'member',
         },
+        is_verified: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        verification_token: {
+            type: DataTypes.STRING,
+        },
+        verification_token_expiry: {
+            type: DataTypes.DATE
+        }
     }, {
         tableName: 'users',
         timestamps: true,

@@ -1,6 +1,6 @@
 const transporter = require('./email.util');
 
-const sendEmail = async (to, token) => {
+const sendEmail = async (to, urlVerification) => {
   const info = await transporter.sendMail({
     from: '"Bikuren Motorbike Rental" <suryanegara1209@gmail.com>',
     to,
@@ -8,7 +8,7 @@ const sendEmail = async (to, token) => {
     //text: "Nice nice nice", // Plain-text version of the message
     html: `
         <p>Trying to verify your email? Please click the button below</p>
-        <a href="https://flowing-lizard-lately.ngrok-free.app/auth/${token}"
+        <a href="${urlVerification}"
         style="
             display:inline-block;
             padding:12px 24px;
