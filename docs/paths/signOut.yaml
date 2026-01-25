@@ -1,0 +1,39 @@
+
+signout:
+  post:
+    tags:
+      - Auth
+    summary: Sign out the current user (must be signed in)
+    description: >
+      Logs out the currently signed-in user by clearing the authentication cookie.
+      User must be signed in.
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: Sign out successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Sign out success!"
+      '403':
+        description: User not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Internal server error"

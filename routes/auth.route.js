@@ -5,6 +5,8 @@ const checkEmail = require('../middleware/checkEmail.middleware');
 const validate = require('../middleware/validate.middleware');
 const signUpSchema = require('../validations/auth/signUp.schema');
 const signInSchema = require('../validations/auth/signIn.schema');
+const verifySchema = require('../validations/auth/verify.schema');
+
 
 const {
     signUp,
@@ -38,7 +40,7 @@ router.post(
 
 router.get(
     '/:id/:token', 
-    guestOnly, 
+    validate(verifySchema, 'params'),
     authVerify
 );
 

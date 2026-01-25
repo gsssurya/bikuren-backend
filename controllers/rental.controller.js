@@ -12,7 +12,14 @@ const getRental = async (req, res) => {
                 model: User,
                 as: 'user',
                 attributes: {
-                    exclude : [...exclude, 'password', , 'role']
+                    exclude: [
+                        ...exclude,
+                        'password',
+                        'is_verified',
+                        'verification_token',
+                        'verification_token_expiry',
+                        'role'
+                    ]
                 }
             })
         };
@@ -45,7 +52,7 @@ const getRental = async (req, res) => {
                 }
         });
 
-        if(!data) return res.status(404).json({ message: 'Rental is empty!' });
+        if(data.length === 0) return res.status(404).json({ message: 'Rental is empty!' });
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -120,11 +127,14 @@ const createRental = async (req, res) => {
 const updateRentalById = async (req, res) => {
     try {
         const { id } = req.params;
-        await Rental.update(req.body, {
+        const [affectedCount] = await Rental.update(req.body, {
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Update failed. Rental not found!` })
+        }
         res.status(200).json({ message: 'Rental Updated!' });
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -134,11 +144,14 @@ const updateRentalById = async (req, res) => {
 const deleteRentalById = async (req, res) => {
     try {
         const { id } = req.params;
-        await Rental.destroy({
+        const affectedCount = await Rental.destroy({
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Delete failed. Rental not found!` })
+        }
         res.status(200).json({ message: 'Rental deleted!' })
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -148,11 +161,14 @@ const deleteRentalById = async (req, res) => {
 const restoreRentalById = async(req, res) => {
     try {
         const { id } = req.params;
-        await Rental.restore({
+        const affectedCount = await Rental.restore({
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            res.status(404).json({ message: `Restore failed. Rental not found!` })
+        }
         res.status(200).json({ message: `Rental by ID = ${id} restored!`})
     } catch (e) {
         res.status(500).json({ message: `${e}`});

@@ -1,0 +1,65 @@
+signup:
+  post:
+    tags:
+      - Auth
+    summary: Register a new user (guest only)
+    description: >
+      Allows a guest (not signed in) to register a new account. 
+      Sends a verification email with a token link after successful registration.
+    security: []  # guest endpoint, no auth required
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/SignUp'
+          example:
+            name: "Mr. Subali"
+            email: "subali@stikom-bali.ac.id"
+            password: "StikomBali1."
+            phone: "+62812345678"
+            country: "Indonesia"
+            passport: "A12345678"
+            address: "Jl. Raya Renon"
+            room_number: "101A"
+    responses:
+      '200':
+        description: Registration successful, verification email sent
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                verificationLink:
+                  type: string
+              example:
+                id: 1
+                token: abcd-abcd-abcd-abcd
+                message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify"
+                verificationLink: "http://localhost:3000/auth/1/abcd-abcd-abcd-abcd"
+      '400':
+        description: Guest only restriction / already signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are already sign in. Please sign out first!"
+      '409':
+        description: Email already registered
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Your email is already registered!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"

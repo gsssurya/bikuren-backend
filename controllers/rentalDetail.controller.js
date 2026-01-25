@@ -23,7 +23,7 @@ const getRentalDetails = async (req, res) => {
                 exclude: ['deleted_at']
             }
         });
-        if(!data) return res.status(404).json({ message: 'Rental detail is empty!' });
+        if(data.length === 0) return res.status(404).json({ message: 'Rental detail is empty!' });
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -70,11 +70,14 @@ const createRentalDetail = async (req, res) => {
 const updateRentalDetail = async (req, res) => {
     try {
         const { id } = req.params;
-        await RentalDetail.update(req.body, {
+        const [affectedCount] = await RentalDetail.update(req.body, {
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Update failed. Rental detail not found!` })
+        }
         res.status(200).json({ message: 'Rental detail updated!' });
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -84,11 +87,14 @@ const updateRentalDetail = async (req, res) => {
 const deleteRentalDetail = async (req, res) => {
     try {
         const { id } = req.params;
-        await RentalDetail.destroy({
+        const affectedCount = await RentalDetail.destroy({
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Delete failed. Rental detail not found!` })
+        }
         res.status(200).json({ message: 'Rental detail deleted!' });
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -98,11 +104,14 @@ const deleteRentalDetail = async (req, res) => {
 const restoreRentalDetail = async (req, res) => {
     try {
         const { id } = req.params;
-        await RentalDetail.restore({
+        const affectedCount = await RentalDetail.restore({
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Restore failed. Rental detail not found!` })
+        }
         res.status(200).json({ message: `Rental detail by ID = ${id} restored!` })
     } catch (e) {
         res.status(500).json({ message: `${e}` });

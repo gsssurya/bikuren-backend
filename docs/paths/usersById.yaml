@@ -1,0 +1,292 @@
+
+usersById:
+  get:
+    tags:
+      - Users
+    summary: Get a verified user by ID (must be signed in)
+    description: >
+      Retrieves a verified user by their ID. 
+      Excludes sensitive fields like password and verification tokens.
+      User must be signed in to access this endpoint.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the user to retrieve
+        schema:
+          type: integer
+          minimum: 1
+        example: 45
+    responses:
+      '200':
+        description: User retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/Users'
+            example:
+              id: 1
+              name: "Jane Doe"
+              email: "janedoe@example.com"
+              phone: "+628123456789"
+              country: "Indonesia"
+              passport: "B98765432"
+              address: "Jl. Example No.2, Jakarta"
+              room_number: "102B"
+              role: "member"
+      '403':
+        description: User not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "User not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+
+  put:
+    tags:
+      - Users
+    summary: Update a user by ID (must be signed in)
+    description: >
+      Updates a user's information by ID. Only signed-in users can access this endpoint. 
+      Password, if provided, will be hashed automatically. Partial updates are allowed.
+    security:
+      - cookieAuth: []  # Requires signed-in user
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the user to update
+        schema:
+          type: integer
+          minimum: 1
+        example: 45
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                maxLength: 150
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                minLength: 8
+                maxLength: 30
+                pattern: "^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$"
+                description: "Password must contain at least 1 uppercase letter, 1 number, and 1 special character"
+              phone:
+                type: string
+                pattern: "^\\+"
+                minLength: 9
+                maxLength: 20
+              country:
+                type: string
+                minLength: 3
+                maxLength: 50
+              passport:
+                type: string
+                maxLength: 25
+              address:
+                type: string
+                maxLength: 255
+              room_number:
+                type: string
+                maxLength: 10
+              role:
+                type: string
+                enum:
+                  - admin
+                  - member
+            minProperties: 1
+          example:
+            name: "Widiatmika"
+            phone: "+6281122334455"
+    responses:
+      '200':
+        description: User updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "User updated!"
+      '403':
+        description: User not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "User not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+  delete:
+    tags:
+      - Users
+    summary: Delete a user by ID (admin only)
+    description: >
+      Deletes a user by their ID.
+      This endpoint can only be accessed by an admin who is already signed in.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the user to delete
+        schema:
+          type: integer
+          minimum: 1
+        example: 45
+    responses:
+      '200':
+        description: User deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+            example:
+              message: "User deleted!"
+      '403':
+        description: Unauthorized or forbidden access
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              notSignedIn:
+                summary: User not signed in
+                value:
+                  message: "You are not sign in yet!"
+              forbidden:
+                summary: Access denied (not admin)
+                value:
+                  message: "Forbidden. Access denied!"
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "User not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+
+
+  patch:
+    tags:
+      - Users
+    summary: Restore a deleted user by ID (admin only)
+    description: >
+      Restores a previously deleted user by their ID.
+      This endpoint can only be accessed by an admin who is already signed in.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the user to restore
+        schema:
+          type: integer
+          minimum: 1
+        example: 45
+    responses:
+      '200':
+        description: User restored successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+            example:
+              message: "User by ID = 3 restored!"
+      '403':
+        description: Unauthorized or forbidden access
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              notSignedIn:
+                summary: User not signed in
+                value:
+                  message: "You are not sign in yet!"
+              forbidden:
+                summary: Access denied (admin only)
+                value:
+                  message: "Forbidden. Access denied!"
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "User not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+

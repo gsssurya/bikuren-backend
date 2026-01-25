@@ -1,0 +1,81 @@
+userUpload:
+  post:
+    summary: Upload user profile photo
+    description: Upload a profile photo for an authenticated and verified user
+    tags:
+      - Users
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - foto
+            properties:
+              foto:
+                type: string
+                format: binary
+                description: Profile photo file to upload
+    responses:
+      200:
+        description: Profile photo uploaded successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Upload success!
+                userId:
+                  type: integer
+                  example: 1
+                file:
+                  type: string
+                  example: 550e8400-e29b-41d4-a716-446655440000-2026-01-25.jpg
+                url:
+                  type: string
+                  example: uploads/profiles/550e8400-e29b-41d4-a716-446655440000-2026-01-25.jpg
+      400:
+        description: Bad request (invalid file type or upload error)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Only PNG and JPG images are allowed
+      403:
+        description: User is not authenticated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: You are not sign in yet!
+      404:
+        description: User not found or not verified
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Upload failed. User not found or not verified!
+      500:
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Internal server error

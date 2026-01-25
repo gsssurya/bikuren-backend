@@ -1,0 +1,11 @@
+Admin:
+{
+    "email": "suryanegara1209@gmail.com",
+    "password": "Suryanegara1209."
+}
+
+Member:
+{
+    "email": "krisnawidiatmika17@gmail.com",
+    "password": "Krisna123."
+}

@@ -23,7 +23,9 @@ const signUp = async (req, res) => {
         const user = await User.create(userPayload);
         await sendEmail(userPayload.email, `http://localhost:3000/auth/${user.id}/${verificationToken}`);
         res.status(200).json({
-            message: 'To verify, please check your email!', 
+            id: user.id,
+            token: verificationToken,
+            message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify",
             verifivationLink: `http://localhost:3000/auth/${user.id}/${verificationToken}`
         });
     } catch (e) {
@@ -35,7 +37,7 @@ const authVerify = async (req, res) => {
     try {
         const { id, token } = req.params;
         const data = await User.findOne({
-            where: { id },
+            where: { id,  },
             attributes: {
                 include: [
                     'id',
@@ -44,10 +46,6 @@ const authVerify = async (req, res) => {
                     'verification_token_expiry'
                 ]
             }
-        });
-
-        if(Object.keys(data).length === 0) return res.status(401).json({ 
-            message: 'Invalid verification link!'
         });
 
         if(!data) return res.status(401).json({ 

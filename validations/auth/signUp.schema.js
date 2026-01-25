@@ -15,7 +15,6 @@ const signUpSchema = Joi.object({
         .pattern(
             /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/
         )
-        .required()
         .messages({
             'string.pattern.base':
                 'Password must contain at least 1 uppercase letter, 1 number, and 1 special character',

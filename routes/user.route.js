@@ -1,11 +1,13 @@
 const express = require('express');
 const auth = require('../middleware/auth.middleware');
-const authorize = require('../middleware/role.middleware');
+const authorize = require('../middleware/authorize.middleware');
 const validate = require('../middleware/validate.middleware');
 const getByIdSchema = require('../validations/id.schema');
 const updateUserSchema = require('../validations/user/user.update.schema');
 const userSchema = require('../validations/user/user.schema');
 const checkEmail = require('../middleware/checkEmail.middleware');
+const uploadSingle = require('../middleware/upload.middleware');
+
 
 const {
     getUsers,
@@ -13,8 +15,9 @@ const {
     updateUser,
     deleteUser,
     restoreUser,
-    createUser
-} = require('../controllers/user.controller')
+    createUser,
+    uploadProfileFoto,
+} = require('../controllers/user.controller');
 
 const router = express.Router();
 
@@ -57,11 +60,18 @@ router.delete(
 );
 
 router.patch(
-    '/:id/restore', 
+    '/:id', 
     auth, 
     authorize('admin'),
     validate(getByIdSchema,'params'),
     restoreUser
+);
+
+router.post(
+    '/upload',
+    auth,
+    uploadSingle(),
+    uploadProfileFoto
 );
 
 module.exports = router;

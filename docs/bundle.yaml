@@ -1,0 +1,1982 @@
+openapi: 3.0.3
+info:
+  title: BIKUREN Backend
+  description: |
+    **BIKUREN Backend** is a backend application developed to support the Bikuren website,
+    a motorbike rental booking platform.
+
+    This backend handles user authentication, user management, bike management,
+    rental transactions, and rental details in a structured and secure manner.
+    The system uses JWT-based authentication, role-based authorization,
+    data validation, and file uploads for user profile images and bike images.
+
+    ## Folder Structure Overview
+
+    ```
+    controllers/   -> Business logic for each endpoint
+    docs/          -> API documentation (Swagger/OpenAPI)
+    middleware/    -> Authentication, authorization, upload, and filters
+    models/        -> Database models (ORM)
+    routes/        -> API route definitions
+    uploads/       -> Uploaded files (profile & bike images)
+    utils/         -> Reusable utility functions
+    validations/   -> Joi validation schemas
+    .env           -> Environment configuration
+    bikuren.sql    -> Database dump
+    index.js       -> Application entry point
+    ```
+  version: 1.0.0
+  contact:
+    name: BIKUREN Support
+    email: krisnawidiatmika17@gmail.com
+servers:
+  - url: 'http://localhost:3000/'
+    description: Local development server
+tags:
+  - name: Auth
+    description: |
+      Authentication and authorization endpoints.
+      Handles user sign up, email verification, sign in, and sign out.
+  - name: Users
+    description: |
+      User management endpoints.
+      Includes fetching users, updating user data, uploading profile images,
+      soft deleting users, and restoring users.
+  - name: Bikes
+    description: |
+      Bike management endpoints.
+      Includes fetching bike data, uploading bike images,
+      updating, deleting, and restoring bike records.
+  - name: Rentals
+    description: |
+      Rental transaction endpoints.
+      Allows creating and managing rental transactions.
+      Rental data can be expanded with user, rental details, and bike information.
+  - name: Rental Details
+    description: |
+      Rental detail management endpoints.
+      Handles motorbike details associated with a rental transaction.
+      Data can be expanded with bike information.
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user (guest only)
+      description: |
+        Allows a guest (not signed in) to register a new account.  Sends a verification email with a token link after successful registration.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  description: Full name of the user
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 30
+                  description: |
+                    Password must contain at least 1 uppercase letter, 1 number,  and 1 special character
+                  pattern: '^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$'
+                phone:
+                  type: string
+                  description: User's phone number
+                country:
+                  type: string
+                  description: Country of residence
+                passport:
+                  type: string
+                  description: Passport number
+                address:
+                  type: string
+                  description: Residential address
+                room_number:
+                  type: string
+                  description: Optional room number
+              required:
+                - name
+                - email
+                - password
+                - phone
+                - country
+                - passport
+                - address
+              example:
+                name: John Doe
+                email: johndoe@example.com
+                password: Password1!
+                phone: '+628123456789'
+                country: Indonesia
+                passport: A12345678
+                address: 'Jl. Example No.1, Jakarta'
+                room_number: 101A
+            example:
+              name: Mr. Subali
+              email: subali@stikom-bali.ac.id
+              password: StikomBali1.
+              phone: '+62812345678'
+              country: Indonesia
+              passport: A12345678
+              address: Jl. Raya Renon
+              room_number: 101A
+      responses:
+        '200':
+          description: 'Registration successful, verification email sent'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  verificationLink:
+                    type: string
+                example:
+                  id: 1
+                  token: abcd-abcd-abcd-abcd
+                  message: 'To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify'
+                  verificationLink: 'http://localhost:3000/auth/1/abcd-abcd-abcd-abcd'
+        '400':
+          description: Guest only restriction / already signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are already sign in. Please sign out first!
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Your email is already registered!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  '/auth/{id}/{token}':
+    get:
+      tags:
+        - Auth
+      summary: Verify user's email
+      description: |
+        Verifies a user's email using the verification token sent via email. Accessible only for guests (not signed in).
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user to verify
+          schema:
+            type: integer
+            minimum: 1
+        - name: token
+          in: path
+          required: true
+          description: Verification token sent via email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email verification success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Verification success!
+        '400':
+          description: Email already verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                alreadyVerified:
+                  value:
+                    message: Email already verified!
+        '401':
+          description: Invalid or expired verification token/link
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                invalidLink:
+                  value:
+                    message: Invalid verification link!
+                expiredToken:
+                  value:
+                    message: Verification token has expired!
+                invalidToken:
+                  value:
+                    message: Invalid verification token!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  /auth/signin:
+    post:
+      tags:
+        - Auth
+      summary: Sign in a user (guest only)
+      description: Authenticate a user using email and password. Must be a guest (not signed in). Sets a signed HTTP-only cookie upon success.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's registered email
+                password:
+                  type: string
+                  minLength: 6
+                  description: User's password
+              required:
+                - email
+                - password
+              example:
+                email: user@example.com
+                password: Mypassword123.
+            example:
+              email: suryanegara1209@gmail.com
+              password: Suryanegara1209.
+      responses:
+        '200':
+          description: Sign in success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Sign in success!
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                incorrectPassword:
+                  value:
+                    message: Incorrect password!
+                alreadySignedIn:
+                  value:
+                    message: You are already sign in. Please sign out first!
+        '404':
+          description: Email not registered or not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Your email is not registered yet!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  /auth/signout:
+    post:
+      tags:
+        - Auth
+      summary: Sign out the current user (must be signed in)
+      description: |
+        Logs out the currently signed-in user by clearing the authentication cookie. User must be signed in.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Sign out successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Sign out success!
+        '403':
+          description: User not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are not sign in yet!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Internal server error
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get all verified users (must be signed in)
+      description: |
+        Retrieves a list of all verified users.  Excludes sensitive fields like password and verification tokens. User must be signed in to access this endpoint.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of verified users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/~1users/post/requestBody/content/application~1json/schema'
+              example:
+                - id: 1
+                  name: Jane Doe
+                  email: janedoe@example.com
+                  phone: '+628123456789'
+                  country: Indonesia
+                  passport: B98765432
+                  address: 'Jl. Example No.2, Jakarta'
+                  room_number: 102B
+                  role: member
+                - id: 2
+                  name: John Smith
+                  email: johnsmith@example.com
+                  phone: '+628987654321'
+                  country: Indonesia
+                  passport: C12345678
+                  address: 'Jl. Example No.3, Jakarta'
+                  room_number: 103A
+                  role: admin
+        '403':
+          description: User not signed in
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    description: Describes the error that occurred
+                    example: Resource not found!
+              example:
+                message: You are not sign in yet!
+        '404':
+          description: No users found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: User is empty!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    post:
+      tags:
+        - Users
+      summary: Create a new user (admin only)
+      description: |
+        Allows an admin to create a new user.  The email must be unique. A verification token will be sent to the user's email. Requires authentication and admin role.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                  description: Full name of the user
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 30
+                  description: |
+                    Password must contain at least 1 uppercase letter, 1 number,  and 1 special character
+                  pattern: '^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$'
+                phone:
+                  type: string
+                  pattern: ^\+
+                  minLength: 9
+                  maxLength: 20
+                  description: 'Phone number must start with ''+'' followed by country code (e.g., +62...)'
+                country:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  description: Country of residence
+                passport:
+                  type: string
+                  maxLength: 25
+                  description: Passport number
+                address:
+                  type: string
+                  maxLength: 255
+                  description: Residential address
+                room_number:
+                  type: string
+                  maxLength: 10
+                  description: Optional room number
+                role:
+                  type: string
+                  description: User role
+                  enum:
+                    - admin
+                    - member
+              required:
+                - name
+                - email
+                - password
+                - phone
+                - country
+              example:
+                name: Jane Doe
+                email: janedoe@example.com
+                password: Password1!
+                phone: '+628123456789'
+                country: Indonesia
+                passport: B98765432
+                address: 'Jl. Example No.2, Jakarta'
+                room_number: 102B
+                role: member
+            example:
+              name: Jane Doe
+              email: janedoe@example.com
+              password: Password1!
+              phone: '+628123456789'
+              country: Indonesia
+              passport: B98765432
+              address: 'Jl. Example No.2, Jakarta'
+              room_number: 102B
+              role: member
+      responses:
+        '200':
+          description: User added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: integer
+                  token:
+                    type: string
+                  verifivationLink:
+                    type: string
+                example:
+                  id: 1
+                  token: abc123verificationtoken
+                  message: 'To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify'
+                  verifivationLink: 'http://localhost:3000/auth/1/abc123verificationtoken'
+        '403':
+          description: Forbidden or not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                notSignedIn:
+                  value:
+                    message: You are not sign in yet!
+                forbidden:
+                  value:
+                    message: Forbidden. Access denied!
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Your email is already registered!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  /users/upload:
+    post:
+      summary: Upload user profile photo
+      description: Upload a profile photo for an authenticated and verified user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - foto
+              properties:
+                foto:
+                  type: string
+                  format: binary
+                  description: Profile photo file to upload
+      responses:
+        '200':
+          description: Profile photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Upload success!
+                  userId:
+                    type: integer
+                    example: 1
+                  file:
+                    type: string
+                    example: 550e8400-e29b-41d4-a716-446655440000-2026-01-25.jpg
+                  url:
+                    type: string
+                    example: uploads/profiles/550e8400-e29b-41d4-a716-446655440000-2026-01-25.jpg
+        '400':
+          description: Bad request (invalid file type or upload error)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Only PNG and JPG images are allowed
+        '403':
+          description: User is not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: You are not sign in yet!
+        '404':
+          description: User not found or not verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Upload failed. User not found or not verified!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Internal server error
+  '/users/{id}':
+    get:
+      tags:
+        - Users
+      summary: Get a verified user by ID (must be signed in)
+      description: |
+        Retrieves a verified user by their ID.  Excludes sensitive fields like password and verification tokens. User must be signed in to access this endpoint.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user to retrieve
+          schema:
+            type: integer
+            minimum: 1
+          example: 45
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/post/requestBody/content/application~1json/schema'
+              example:
+                id: 1
+                name: Jane Doe
+                email: janedoe@example.com
+                phone: '+628123456789'
+                country: Indonesia
+                passport: B98765432
+                address: 'Jl. Example No.2, Jakarta'
+                room_number: 102B
+                role: member
+        '403':
+          description: User not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are not sign in yet!
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: User not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    put:
+      tags:
+        - Users
+      summary: Update a user by ID (must be signed in)
+      description: |
+        Updates a user's information by ID. Only signed-in users can access this endpoint.  Password, if provided, will be hashed automatically. Partial updates are allowed.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user to update
+          schema:
+            type: integer
+            minimum: 1
+          example: 45
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 30
+                  pattern: '^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$'
+                  description: 'Password must contain at least 1 uppercase letter, 1 number, and 1 special character'
+                phone:
+                  type: string
+                  pattern: ^\+
+                  minLength: 9
+                  maxLength: 20
+                country:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                passport:
+                  type: string
+                  maxLength: 25
+                address:
+                  type: string
+                  maxLength: 255
+                room_number:
+                  type: string
+                  maxLength: 10
+                role:
+                  type: string
+                  enum:
+                    - admin
+                    - member
+              minProperties: 1
+            example:
+              name: Widiatmika
+              phone: '+6281122334455'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: User updated!
+        '403':
+          description: User not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are not sign in yet!
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: User not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    delete:
+      tags:
+        - Users
+      summary: Delete a user by ID (admin only)
+      description: |
+        Deletes a user by their ID. This endpoint can only be accessed by an admin who is already signed in.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user to delete
+          schema:
+            type: integer
+            minimum: 1
+          example: 45
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: User deleted!
+        '403':
+          description: Unauthorized or forbidden access
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                notSignedIn:
+                  summary: User not signed in
+                  value:
+                    message: You are not sign in yet!
+                forbidden:
+                  summary: Access denied (not admin)
+                  value:
+                    message: Forbidden. Access denied!
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: User not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    patch:
+      tags:
+        - Users
+      summary: Restore a deleted user by ID (admin only)
+      description: |
+        Restores a previously deleted user by their ID. This endpoint can only be accessed by an admin who is already signed in.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user to restore
+          schema:
+            type: integer
+            minimum: 1
+          example: 45
+      responses:
+        '200':
+          description: User restored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: User by ID = 3 restored!
+        '403':
+          description: Unauthorized or forbidden access
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                notSignedIn:
+                  summary: User not signed in
+                  value:
+                    message: You are not sign in yet!
+                forbidden:
+                  summary: Access denied (admin only)
+                  value:
+                    message: Forbidden. Access denied!
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: User not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  /bikes:
+    get:
+      summary: List all bikes
+      tags:
+        - Bikes
+      responses:
+        '200':
+          description: List of all bikes owned by BIKUREN
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/~1bikes/post/requestBody/content/application~1json/schema'
+        '404':
+          description: Bike not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Bike not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    post:
+      tags:
+        - Bikes
+      summary: Add a new bike (admin only)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - plate_number
+                - price
+              properties:
+                id:
+                  type: integer
+                  readOnly: true
+                  example: 1
+                  description: Auto-incremented ID of the bike
+                name:
+                  type: string
+                  maxLength: 100
+                  description: Name of the bike
+                  example: Honda Vario 150
+                plate_number:
+                  type: string
+                  maxLength: 20
+                  description: Unique plate number of the bike
+                  example: DK 1234 AB
+                price:
+                  type: number
+                  format: double
+                  description: Rental price per day
+                  example: 150000
+                status:
+                  type: string
+                  enum:
+                    - available
+                    - rented
+                    - maintenance
+                  description: Current status of the bike
+                  example: available
+                created_at:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                  description: Timestamp when the bike was created
+                updated_at:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                  description: Timestamp when the bike was last updated
+      responses:
+        '200':
+          description: Bike added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Bike added!
+        '403':
+          description: Forbidden / Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are not sign in yet!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  '/bikes/{id}/upload':
+    post:
+      tags:
+        - Bikes
+      summary: Upload bike photo (Admin only)
+      description: |
+        Upload a bike image. Only authenticated users with **admin** role are allowed to upload bike photos.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Bike ID
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - foto
+              properties:
+                foto:
+                  type: string
+                  format: binary
+                  description: Bike image file (PNG or JPG)
+      responses:
+        '200':
+          description: Upload success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Upload success!
+                  bikeId:
+                    type: integer
+                    example: 1
+                  file:
+                    type: string
+                    example: 9f8d3e21-2026-01-25.jpg
+                  url:
+                    type: string
+                    example: uploads/bikes/9f8d3e21-2026-01-25.jpg
+        '400':
+          description: Invalid file upload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Only PNG and JPG images are allowed
+        '403':
+          description: Unauthorized or forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Forbidden. Access denied!
+        '404':
+          description: Bike not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Upload failed. Bike not found!
+        '500':
+          description: Internal server error
+  '/bikes/{id}':
+    get:
+      tags:
+        - Bikes
+      summary: Get a bike by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the bike to retrieve
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Bike retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1bikes/post/requestBody/content/application~1json/schema'
+              example:
+                name: Mountain Bike
+                plate_number: B 2132 FBK
+                price: 2500000
+                status: available
+        '404':
+          description: Bike not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Bike not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    put:
+      tags:
+        - Bikes
+      summary: Update a bike by its ID (admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the bike to update
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                plate_number:
+                  type: string
+                  minLength: 1
+                  maxLength: 20
+                price:
+                  type: number
+                  maximum: 1000000000
+                status:
+                  type: string
+              minProperties: 1
+              example:
+                name: Road Bike
+                price: 3000000
+                status: unavailable
+            example:
+              name: Road Bike
+              price: 3000000
+              status: unavailable
+      responses:
+        '200':
+          description: Bike updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Bike updated!
+        '403':
+          description: Forbidden. Access denied!
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Forbidden. Access denied!
+        '404':
+          description: Bike not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Bike not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    delete:
+      tags:
+        - Bikes
+      summary: Delete a bike by its ID (admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the bike to delete
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Bike deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Bike deleted!
+        '403':
+          description: Forbidden. Access denied / Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                notSignedIn:
+                  value:
+                    message: You are not sign in yet!
+                forbidden:
+                  value:
+                    message: Forbidden. Access denied!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    patch:
+      tags:
+        - Bikes
+      summary: Restore a deleted bike by its ID (admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the bike to restore
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Bike restored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Bike by ID = 123 restored!
+        '403':
+          description: Forbidden. Access denied / Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              examples:
+                notSignedIn:
+                  value:
+                    message: You are not sign in yet!
+                forbidden:
+                  value:
+                    message: Forbidden. Access denied!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+  /rentals:
+    get:
+      tags:
+        - Rentals
+      summary: Get all rentals (must be signed in)
+      description: |
+        Retrieves all rentals. Supports optional expansion using the `expand` query parameter. Available expansions: - `user` - `detail` - `bike` (must be used together with `detail`)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: expand
+          in: query
+          required: false
+          description: |
+            Expand related resources. Multiple values can be provided separated by commas. Allowed values: user, detail, bike
+          schema:
+            type: string
+            example: 'user,detail,bike'
+      responses:
+        '200':
+          description: Rentals retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/~1rentals/post/requestBody/content/application~1json/schema'
+              examples:
+                basic:
+                  summary: Rentals without expansion
+                  value:
+                    - id: 1
+                      user_id: 2
+                      total: '250000.00'
+                      status: pending
+                      created_at: '2024-01-01T10:00:00Z'
+                      updated_at: '2024-01-01T10:00:00Z'
+                expanded:
+                  summary: 'Rentals with user, detail, and bike expanded'
+                  value:
+                    - id: 1
+                      user_id: 2
+                      total: '250000.00'
+                      status: ongoing
+                      user:
+                        id: 2
+                        name: John Doe
+                        email: john@example.com
+                        phone: '+628123456789'
+                        country: Indonesia
+                      detail:
+                        - id: 10
+                          rental_id: 1
+                          rental_date: '2024-01-01'
+                          finish_at: '2024-01-03'
+                          bike:
+                            id: 5
+                            name: Honda Beat
+                            plate_number: B 1234 CD
+                            price: '125000.00'
+                            status: rented
+        '403':
+          description: User not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are not sign in yet!
+        '404':
+          description: Rental data is empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Rental is empty!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    post:
+      tags:
+        - Rentals
+      summary: Create a new rental (must be signed in)
+      description: |
+        Create a new motorcycle rental. User must be authenticated.   `user_id` is automatically taken from JWT token.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 1
+                user_id:
+                  type: integer
+                  example: 2
+                total:
+                  type: string
+                  format: decimal
+                  example: '250000.00'
+                status:
+                  type: string
+                  enum:
+                    - pending
+                    - ongoing
+                    - finished
+                    - cancelled
+                  example: pending
+                created_at:
+                  type: string
+                  format: date-time
+                  example: '2024-01-01T10:00:00Z'
+                updated_at:
+                  type: string
+                  format: date-time
+                  example: '2024-01-01T10:00:00Z'
+                user:
+                  $ref: '#/paths/~1users/post/requestBody/content/application~1json/schema'
+                detail:
+                  type: array
+                  items:
+                    $ref: '#/paths/~1rental-details~1%7Bid%7D/get/responses/200/content/application~1json/schema/allOf/0'
+            example:
+              total: 300000
+              status: pending
+      responses:
+        '200':
+          description: Rental successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental added!
+                  id:
+                    type: integer
+                    example: 12
+        '403':
+          description: Unauthorized (not signed in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+  '/rentals/{id}':
+    get:
+      tags:
+        - Rentals
+      summary: Get rental by ID (must be signed in)
+      description: |
+        Get detailed rental data by ID. Supports expand query for related resources (user, detail, bike).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user to delete
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+        - name: expand
+          in: query
+          description: 'Expand related data (user, detail, bike)'
+          required: false
+          schema:
+            type: string
+            example: 'user,detail,bike'
+      responses:
+        '200':
+          description: Rental data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1rentals/post/requestBody/content/application~1json/schema'
+        '403':
+          description: User not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: You are not sign in yet!
+        '404':
+          description: Rental data is empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Rental not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+              example:
+                message: Database connection failed
+    put:
+      tags:
+        - Rentals
+      summary: Update rental by ID (admin only)
+      description: |
+        Update rental data by rental ID. Only admin users are allowed to access this endpoint.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental ID
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1rentals/post/requestBody/content/application~1json/schema'
+            example:
+              total: 450000
+              status: ongoing
+      responses:
+        '200':
+          description: Rental successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental Updated!
+        '403':
+          description: Forbidden or not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+        '404':
+          description: Rental not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+    delete:
+      tags:
+        - Rentals
+      summary: Delete rental by ID (admin only)
+      description: |
+        Delete a rental by its ID. This action is restricted to admin users only.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental ID
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Rental successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental deleted!
+        '403':
+          description: Forbidden or not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+        '404':
+          description: Rental not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Delete failed. Rental not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+    patch:
+      tags:
+        - Rentals
+      summary: Restore deleted rental by ID (admin only)
+      description: |
+        Restore a previously deleted (soft-deleted) rental. Only admin users are allowed to perform this action.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental ID to restore
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Rental successfully restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental by ID = 5 restored!
+        '403':
+          description: Forbidden or not signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+        '404':
+          description: Rental not found or already restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Restore failed. Rental not found!
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1users/get/responses/403/content/application~1json/schema'
+  /rental-details:
+    get:
+      summary: Get rental details (must be signed in)
+      description: |
+        Retrieve rental detail data. Use the `expand=bike` query parameter to include bike information.
+      tags:
+        - Rental Details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expand
+          in: query
+          required: false
+          description: |
+            Relationship to be included in the response. Allowed value: `bike`
+          schema:
+            type: string
+            enum:
+              - bike
+          example: bike
+      responses:
+        '200':
+          description: Rental detail data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/paths/~1rental-details~1%7Bid%7D/get/responses/200/content/application~1json/schema/allOf/0'
+                    - type: object
+                      properties:
+                        bike:
+                          $ref: '#/paths/~1bikes/post/requestBody/content/application~1json/schema'
+        '401':
+          description: Unauthorized - User is not authenticated
+        '404':
+          description: Rental detail is empty
+        '500':
+          description: Internal server error
+    post:
+      summary: Create rental detail (must be signed in)
+      description: |
+        Create a new rental detail record. The user must be authenticated and authorized. The rental end date must be later than the rental start date.
+      tags:
+        - Rental Details
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rental_id
+                - bike_id
+                - rental_date
+                - finish_at
+              properties:
+                rental_id:
+                  type: integer
+                  example: 10
+                bike_id:
+                  type: integer
+                  example: 3
+                rental_date:
+                  type: string
+                  format: date
+                  description: Must be today or a future date
+                  example: '2026-01-20'
+                finish_at:
+                  type: string
+                  format: date
+                  description: Must be later than rental_date
+                  example: '2026-01-22'
+      responses:
+        '200':
+          description: Rental detail created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental detail added!
+        '400':
+          description: Bad Request - Validation failed
+        '401':
+          description: Unauthorized - User is not authenticated
+        '403':
+          description: Forbidden - User does not have permission to perform this action
+        '500':
+          description: Internal server error
+  '/rental-details/{id}':
+    get:
+      summary: Get rental detail by ID (must be signed in)
+      description: |
+        Retrieve a rental detail by its ID. Use the `expand=bike` query parameter to include related bike data. Authentication is required to access this endpoint.
+      tags:
+        - Rental Details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental detail ID
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+        - name: expand
+          in: query
+          required: false
+          description: |
+            Relationship to include in the response. Allowed value: `bike`
+          schema:
+            type: string
+            enum:
+              - bike
+          example: bike
+      responses:
+        '200':
+          description: Rental detail retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 10
+                      rental_id:
+                        type: integer
+                        example: 1
+                      bike_id:
+                        type: integer
+                        example: 5
+                      rental_date:
+                        type: string
+                        format: date
+                        example: '2024-01-01'
+                      finish_at:
+                        type: string
+                        format: date
+                        example: '2024-01-03'
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2024-01-01T09:00:00Z'
+                      updated_at:
+                        type: string
+                  - type: object
+                    properties:
+                      bike:
+                        $ref: '#/paths/~1bikes/post/requestBody/content/application~1json/schema'
+        '403':
+          description: Forbidden - User is not signed in
+        '404':
+          description: Rental detail not found
+        '500':
+          description: Internal server error
+    put:
+      summary: Update rental detail (admin only)
+      description: |
+        Update an existing rental detail by its ID. This endpoint requires authentication and is restricted to admin users only. At least one field must be provided in the request body.
+      tags:
+        - Rental Details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental detail ID
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                rental_date:
+                  type: string
+                  format: date
+                  description: Must be today or a future date
+                  example: '2026-01-21'
+                finish_at:
+                  type: string
+                  format: date
+                  description: Must be later than rental_date
+                  example: '2026-01-23'
+      responses:
+        '200':
+          description: Rental detail updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental detail updated!
+        '400':
+          description: Bad Request - Validation failed or empty payload
+        '403':
+          description: Forbidden - User is not authenticated or not authorized
+        '404':
+          description: Update failed. Rental detail not found
+        '500':
+          description: Internal server error
+    delete:
+      summary: Delete rental detail (admin only)
+      description: |
+        Delete a rental detail by its ID. This endpoint requires authentication and is restricted to admin users only.
+      tags:
+        - Rental Details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental detail ID
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Rental detail deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental detail deleted!
+        '403':
+          description: Forbidden - User is not authenticated or not authorized
+        '404':
+          description: Delete failed. Rental detail not found
+        '500':
+          description: Internal server error
+    patch:
+      summary: Restore rental detail (admin only)
+      description: |
+        Restore a soft-deleted rental detail by its ID. This endpoint requires authentication and is restricted to admin users only.
+      tags:
+        - Rental Details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Rental detail ID
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Rental detail restored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Rental detail by ID = 12 restored!
+        '403':
+          description: Forbidden - User is not authenticated or not authorized
+        '404':
+          description: Restore failed. Rental detail not found
+        '500':
+          description: Internal server error

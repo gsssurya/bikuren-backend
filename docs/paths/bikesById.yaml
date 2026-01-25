@@ -1,0 +1,203 @@
+
+bikesById:
+  get:
+    tags:
+      - Bikes
+    summary: Get a bike by its ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the bike to retrieve
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      '200':
+        description: Bike retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/Bikes'
+            example:
+              name: "Mountain Bike"
+              plate_number: "B 2132 FBK"
+              price: 2500000
+              status: "available"
+      '404':
+        description: Bike not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Bike not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+  put:
+    tags:
+      - Bikes
+    summary: Update a bike by its ID (admin only)
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the bike to update
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/BikeUpdate'
+          example:
+            name: "Road Bike"
+            price: 3000000
+            status: "unavailable"
+    responses:
+      '200':
+        description: Bike updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Bike updated!"
+      '403':
+        description: Forbidden. Access denied!
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Forbidden. Access denied!"
+      '404':
+        description: Bike not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Bike not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+  delete:
+    tags:
+      - Bikes
+    summary: Delete a bike by its ID (admin only)
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the bike to delete
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      '200':
+        description: Bike deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Bike deleted!"
+      '403':
+        description: Forbidden. Access denied / Not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              notSignedIn:
+                value:
+                  message: "You are not sign in yet!"
+              forbidden:
+                value:
+                  message: "Forbidden. Access denied!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+
+  patch:
+    tags:
+      - Bikes
+    summary: Restore a deleted bike by its ID (admin only)
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the bike to restore
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      '200':
+        description: Bike restored successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Bike by ID = 123 restored!"
+      '403':
+        description: Forbidden. Access denied / Not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              notSignedIn:
+                value:
+                  message: "You are not sign in yet!"
+              forbidden:
+                value:
+                  message: "Forbidden. Access denied!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"

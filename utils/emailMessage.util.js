@@ -5,7 +5,6 @@ const sendEmail = async (to, urlVerification) => {
     from: '"Bikuren Motorbike Rental" <suryanegara1209@gmail.com>',
     to,
     subject: "Your verification account!",
-    //text: "Nice nice nice", // Plain-text version of the message
     html: `
         <p>Trying to verify your email? Please click the button below</p>
         <a href="${urlVerification}"
@@ -19,7 +18,7 @@ const sendEmail = async (to, urlVerification) => {
         ">
             Click to verify
         </a>
-        `, // HTML version of the message
+        `,
   });
 
   console.log("Message sent:", info.messageId);

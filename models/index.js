@@ -12,13 +12,13 @@ const fk = {
 
 Rental.hasMany(RentalDetail, {
   foreignKey: 'rental_id',
-  as: 'detail',       // alias untuk Rental.include
+  as: 'detail',       
   onDelete: 'CASCADE'
 });
 
 RentalDetail.belongsTo(Rental, {
   foreignKey: 'rental_id',
-  as: 'rental'         // alias untuk RentalDetail.include
+  as: 'rental'        
 });
 
 Bike.hasMany(RentalDetail, {

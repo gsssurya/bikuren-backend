@@ -1,10 +1,11 @@
 const express = require('express');
 const auth = require('../middleware/auth.middleware');
-const authorize = require('../middleware/role.middleware');
+const authorize = require('../middleware/authorize.middleware');
 const validate = require('../middleware/validate.middleware');
 const getByIdSchema = require('../validations/id.schema');
 const bikeSchema = require('../validations/bike/bike.schema');
 const updateBikeSchema = require('../validations/bike/bike.update.schema');
+const uploadSingle = require('../middleware/upload.middleware');
 
 const { 
     getBikes,
@@ -12,7 +13,8 @@ const {
     createBike,
     updateBikeById,
     deleteBikeById,
-    restoreBikeById
+    restoreBikeById,
+    uploadBikeFoto,
  } = require('../controllers/bike.controller');
 
 const router = express.Router();
@@ -54,11 +56,20 @@ router.delete(
 );
 
 router.patch(
-    '/:id/restore', 
+    '/:id', 
     auth, 
     authorize('admin'), 
     validate(getByIdSchema, 'params'), 
     restoreBikeById
+);
+
+router.post(
+    '/:id/upload',
+    auth,
+    authorize('admin'),
+    validate(getByIdSchema, 'params'),
+    uploadSingle('bikes'),
+    uploadBikeFoto
 );
 
 module.exports = router;

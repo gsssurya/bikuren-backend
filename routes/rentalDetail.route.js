@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth.middleware');
-const authorize = require('../middleware/role.middleware');
+const authorize = require('../middleware/authorize.middleware');
 const validate = require('../middleware/validate.middleware');
 const getByIdSchema = require('../validations/id.schema');
 const rentalDetailSchema = require('../validations/rental-detail/rentalDetail.schema');
@@ -57,7 +57,7 @@ router.delete(
 );
 
 router.patch(
-    '/:id/restore', 
+    '/:id', 
     auth, 
     authorize('admin'), 
     validate(getByIdSchema, 'params'),

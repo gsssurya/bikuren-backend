@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const checkEmail = async (req, res, next) => {
     try {
-        const { email } = req.body;
+        const { email, ...rest } = req.body;
         const user = await User.findOne({ 
             where: {
                 email
@@ -23,15 +23,29 @@ const checkEmail = async (req, res, next) => {
             Date.now() + (60 * 60 * 1000)
         );
 
+        let passwordHash = '';
+        if(rest.password){
+            passwordHash = bcrypt.hashSync(rest.password, salt);
+        }
+
+        rest.password = passwordHash;
         user.verification_token = verificationTokenHash;
         user.verification_token_expiry = verificationTokenExpiry;
 
         await user.save();
 
+        await User.update(rest, {
+            where: {
+                id: user.id
+            }
+        })
+
         await sendEmail(user.email, `http://localhost:3000/auth/${user.id}/${verificationToken}`);
 
         res.status(200).json({
-            message: 'To verify, please check your email!', 
+            id: user.id,
+            token: verificationToken,
+            message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify",
             verifivationLink: `http://localhost:3000/auth/${user.id}/${verificationToken}`
         });
 

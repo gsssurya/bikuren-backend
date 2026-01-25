@@ -1,0 +1,88 @@
+
+bikeUpload:
+  post:
+    tags:
+      - Bikes
+    summary: Upload bike photo (Admin only)
+    description: >
+      Upload a bike image. Only authenticated users with **admin** role
+      are allowed to upload bike photos.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Bike ID
+        schema:
+          type: integer
+          example: 1
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - foto
+            properties:
+              foto:
+                type: string
+                format: binary
+                description: Bike image file (PNG or JPG)
+    responses:
+      "200":
+        description: Upload success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Upload success!
+                bikeId:
+                  type: integer
+                  example: 1
+                file:
+                  type: string
+                  example: 9f8d3e21-2026-01-25.jpg
+                url:
+                  type: string
+                  example: uploads/bikes/9f8d3e21-2026-01-25.jpg
+
+      "400":
+        description: Invalid file upload
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Only PNG and JPG images are allowed
+
+      "403":
+        description: Unauthorized or forbidden
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Forbidden. Access denied!
+
+      "404":
+        description: Bike not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Upload failed. Bike not found!
+
+      "500":
+        description: Internal server error

@@ -1,0 +1,143 @@
+users:
+  get:
+    tags:
+      - Users
+    summary: Get all verified users (must be signed in)
+    description: >
+      Retrieves a list of all verified users. 
+      Excludes sensitive fields like password and verification tokens.
+      User must be signed in to access this endpoint.
+    security:
+      - cookieAuth: []  # Requires signed-in user
+    responses:
+      '200':
+        description: List of verified users
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../schemas.yaml#/Users'
+            example:
+              - id: 1
+                name: "Jane Doe"
+                email: "janedoe@example.com"
+                phone: "+628123456789"
+                country: "Indonesia"
+                passport: "B98765432"
+                address: "Jl. Example No.2, Jakarta"
+                room_number: "102B"
+                role: "member"
+              - id: 2
+                name: "John Smith"
+                email: "johnsmith@example.com"
+                phone: "+628987654321"
+                country: "Indonesia"
+                passport: "C12345678"
+                address: "Jl. Example No.3, Jakarta"
+                room_number: "103A"
+                role: "admin"
+      '403':
+        description: User not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '404':
+        description: No users found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "User is empty!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+
+
+  post:
+    tags:
+      - Users
+    summary: Create a new user (admin only)
+    description: >
+      Allows an admin to create a new user. 
+      The email must be unique. A verification token will be sent to the user's email.
+      Requires authentication and admin role.
+    security:
+      - cookieAuth: []  # User must be signed in
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/Users'
+          example:
+            name: "Jane Doe"
+            email: "janedoe@example.com"
+            password: "Password1!"
+            phone: "+628123456789"
+            country: "Indonesia"
+            passport: "B98765432"
+            address: "Jl. Example No.2, Jakarta"
+            room_number: "102B"
+            role: "member"
+    responses:
+      '200':
+        description: User added successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                id:
+                  type: integer
+                token:
+                  type: string
+                verifivationLink:
+                  type: string
+              example:
+                id: 1
+                token: "abc123verificationtoken"
+                message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify"
+                verifivationLink: "http://localhost:3000/auth/1/abc123verificationtoken"
+      '403':
+        description: Forbidden or not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              notSignedIn:
+                value:
+                  message: "You are not sign in yet!"
+              forbidden:
+                value:
+                  message: "Forbidden. Access denied!"
+      '409':
+        description: Email already registered
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Your email is already registered!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+

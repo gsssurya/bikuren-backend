@@ -7,7 +7,7 @@ const getBikes = async (req, res) => {
                 exclude: ['deleted_at']
             }
         });
-        if(!data) return res.status(404).json({ message: 'Bike is empty!' });
+        if(data.length === 0) return res.status(404).json({ message: 'Bike is empty!' });
         res.status(200).json(data)
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -41,11 +41,14 @@ const createBike = async (req, res) => {
 const updateBikeById = async (req, res) => {
     try {
         const { id } = req.params;
-        await Bike.update(req.body, {
+        const [affectedCount] = await Bike.update(req.body, {
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Update failed. Bike not found!` })
+        }
         res.status(200).json({ message: 'Bike updated!' })
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -55,11 +58,14 @@ const updateBikeById = async (req, res) => {
 const deleteBikeById = async (req, res) => {
     try {
         const { id } = req.params;
-        await Bike.destroy({
+        const affectedCount = await Bike.destroy({
             where: {
                 id,
             }
         });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Delete failed. Bike not found!` })
+        }
         res.status(200).json({ message: 'Bike deleted!' });
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -69,14 +75,42 @@ const deleteBikeById = async (req, res) => {
 const restoreBikeById = async (req, res) => {
     try {
         const { id } = req.params;
-        await Bike.restore({
+        const affectedCount = await Bike.restore({
             where: {
                 id,
             }
         })
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Restore failed. Bike not found!` })
+        }
         res.status(200).json({ message: `Bike by ID = ${id} restored!` })
     } catch (e) {
         res.status(500).json({ message: `${e}` });
+    }
+};
+
+const uploadBikeFoto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const imageUrl = `uploads/bikes/${req.file.filename}`
+        const [affectedCount] = await Bike.update({
+            image: imageUrl,
+        }, {
+            where: {
+                id
+            }
+        });
+        if(affectedCount === 0){
+            return res.status(404).json({ message: `Upload failed. Bike not found!` })
+        }
+        res.status(200).json({
+            message: 'Upload success!',
+            bikeId: id,
+            file: req.file.filename,
+            url: imageUrl
+        });
+    } catch (e) {
+         res.status(200).json({ message: `${e}` });
     }
 };
 
@@ -87,17 +121,5 @@ module.exports = {
     updateBikeById,
     deleteBikeById,
     restoreBikeById,
+    uploadBikeFoto
 };
-
-/* 
-CREATE TABLE bikes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    plate_number VARCHAR(20) NOT NULL UNIQUE,
-    price DECIMAL(10,2) NOT NULL,
-    status ENUM('available', 'rented', 'maintenance') DEFAULT 'available',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
-);
-*/

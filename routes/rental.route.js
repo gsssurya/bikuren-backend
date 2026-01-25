@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth.middleware');
-const authorize = require('../middleware/role.middleware');
+const authorize = require('../middleware/authorize.middleware');
 const validate = require('../middleware/validate.middleware');
 const rentalSchema = require('../validations/rental/rental.schema');
 const updateRentalSchema = require('../validations/rental/rental.update.schema');
@@ -54,13 +54,15 @@ router.delete(
     '/:id', 
     auth, 
     authorize('admin'), 
+    validate(getByIdSchema, 'params'),
     deleteRentalById
 );
 
 router.patch(
-    '/:id/restore', 
+    '/:id', 
     auth, 
     authorize('admin'), 
+    validate(getByIdSchema, 'params'),
     restoreRentalById
 );
 

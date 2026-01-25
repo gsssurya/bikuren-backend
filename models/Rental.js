@@ -30,21 +30,3 @@ const Rental = sequelize.define ('Rental', {
 });
 
 module.exports = Rental;
-
-/* 
-CREATE TABLE rentals (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    total DECIMAL(12,2) NOT NULL,
-    status ENUM('pending', 'ongoing', 'finished', 'cancelled') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL,
-
-    CONSTRAINT fk_rentals_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
-);
-
-*/

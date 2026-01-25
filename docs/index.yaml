@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: BIKUREN Backend
+  description: |
+    **BIKUREN Backend** is a backend application developed to support the Bikuren website,
+    a motorbike rental booking platform.
+
+    This backend handles user authentication, user management, bike management,
+    rental transactions, and rental details in a structured and secure manner.
+    The system uses JWT-based authentication, role-based authorization,
+    data validation, and file uploads for user profile images and bike images.
+
+    ## Folder Structure Overview
+
+    ```
+    controllers/   -> Business logic for each endpoint
+    docs/          -> API documentation (Swagger/OpenAPI)
+    middleware/    -> Authentication, authorization, upload, and filters
+    models/        -> Database models (ORM)
+    routes/        -> API route definitions
+    uploads/       -> Uploaded files (profile & bike images)
+    utils/         -> Reusable utility functions
+    validations/   -> Joi validation schemas
+    .env           -> Environment configuration
+    bikuren.sql    -> Database dump
+    index.js       -> Application entry point
+    ```
+  version: 1.0.0
+
+  contact:
+    name: BIKUREN Support
+    email: krisnawidiatmika17@gmail.com
+
+servers:
+  - url: http://localhost:3000/
+    description: Local development server
+
+tags:
+  - name: Auth
+    description: |
+      Authentication and authorization endpoints.
+      Handles user sign up, email verification, sign in, and sign out.
+
+  - name: Users
+    description: |
+      User management endpoints.
+      Includes fetching users, updating user data, uploading profile images,
+      soft deleting users, and restoring users.
+
+  - name: Bikes
+    description: |
+      Bike management endpoints.
+      Includes fetching bike data, uploading bike images,
+      updating, deleting, and restoring bike records.
+
+  - name: Rentals
+    description: |
+      Rental transaction endpoints.
+      Allows creating and managing rental transactions.
+      Rental data can be expanded with user, rental details, and bike information.
+
+  - name: Rental Details
+    description: |
+      Rental detail management endpoints.
+      Handles motorbike details associated with a rental transaction.
+      Data can be expanded with bike information.
+
+paths:
+  /auth/signup:
+    $ref: './paths/signUp.yaml#/signup'
+  /auth/{id}/{token}:
+    $ref: './paths/authVerify.yaml#/verify'
+  /auth/signin:
+    $ref: './paths/signIn.yaml#/signin'
+  /auth/signout:
+    $ref: './paths/signOut.yaml#/signout'
+  /users:
+    $ref: './paths/users.yaml#/users'
+  /users/upload:
+    $ref: './paths/uploadUserFoto.yaml#/userUpload'
+  /users/{id}:
+    $ref: './paths/usersById.yaml#/usersById'
+  /bikes:
+    $ref: './paths/bikes.yaml#/bikes'
+  /bikes/{id}/upload:
+    $ref: './paths/uploadBikeFoto.yaml#/bikeUpload'
+  /bikes/{id}:
+    $ref: './paths/bikesById.yaml#/bikesById'
+  /rentals:
+    $ref: './paths/rentals.yaml#/rentals'
+  /rentals/{id}:
+    $ref: './paths/rentalsById.yaml#/rentalsById'
+  /rental-details:
+    $ref: './paths/rentalDetails.yaml#/rentalDetails'
+  /rental-details/{id}:
+    $ref: './paths/rentalDetailsById.yaml#/rentalDetailsById'
