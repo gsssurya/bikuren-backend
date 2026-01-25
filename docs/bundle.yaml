@@ -10,6 +10,10 @@ info:
     The system uses JWT-based authentication, role-based authorization,
     data validation, and file uploads for user profile images and bike images.
 
+    ## Anggota Kelompok
+    1. Ida Bagus Putu Surya Negara (240030424)
+    2. I Made Krisna Widiatmika (240030369)
+
     ## Folder Structure Overview
 
     ```
