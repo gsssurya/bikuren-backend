@@ -1,5 +1,6 @@
 const dotenv = require('dotenv');
 dotenv.config();
+const cors = require('cors');
 const express = require('express');
 const sequelize = require('./utils/db.util');
 const userRoute = require('./routes/user.route');
@@ -33,6 +34,14 @@ try {
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use(express.json());
+
+app.use(
+  cors({
+    origin: "http://192.168.1.21:5173",
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
+  })
+);
 
 app.use('/auth', authRoute);
 app.use('/users', userRoute);

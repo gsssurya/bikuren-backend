@@ -20,7 +20,6 @@ const router = express.Router();
 
 router.get(
     '/', 
-    auth,
     validate(expandRentalSchema, 'query'), 
     getRental
 );

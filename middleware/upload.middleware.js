@@ -22,7 +22,10 @@ const uploadSingle = (folder = "profiles") => {
   return (req, res, next) => {
     const upload = multer({
       storage: createStorage(folder),
-      fileFilter: imageFilter
+      fileFilter: imageFilter,
+      limits: {
+        fileSize: 500 * 1024
+      }
     }).single("foto");
 
     upload(req, res, (err) => {
