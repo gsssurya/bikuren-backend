@@ -98,31 +98,35 @@ const signIn = async (req, res) => {
             }
         });
         const comparePass = bcrypt.compareSync(req.body.password, data.password);
+        const remember = req.body.remember;
         if(comparePass) {
+            let maxAge = 0;
+            let jwtExp = '';
+            if(remember){
+                maxAge = 7 * 24 * 60 * 60 * 1000;
+                jwtExp = '7d';
+            } else {
+                maxAge = 60 * 1000 * 60;
+                jwtExp = '1h';
+            }
             var token = jwt.sign({
                 id: data.id,
                 role: data.role
             },
-                process.env.JWT_SECRET
-            );
-            const remember = req.body.remember;
-            if (remember){
-                res.cookie('token', token, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: 'lax',
-                    maxAge: 7 * 24 * 60 * 60 * 1000,
-                    signed: true
-                });
-            } else {
-                res.cookie('token', token, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: 'lax',
-                    maxAge: 60 * 1000 * 60,
-                    signed: true
-                });
+                process.env.JWT_SECRET,
+            {
+                expiresIn: "1h" // ⬅ WAJIB kalau mau ada exp
             }
+            );
+
+        
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'lax',
+                maxAge,
+                signed: true
+            });
             return res.status(200).json({
                 success: true,
                 data: {
@@ -157,10 +161,24 @@ const signOut = (req, res) => {
     res.status(200).json({ message: "Sign out success" });
 };
 
+const getMe = (req, res) => {
+  const token = req.signedCookies.token || req.cookies.token;
+
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ userId: decoded.id });
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
+  }
+}
+
 
 module.exports = { 
     signUp,
     signIn,
     signOut,
-    authVerify
+    authVerify,
+    getMe
 };

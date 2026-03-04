@@ -13,6 +13,7 @@ const {
     signIn,
     signOut,
     authVerify,
+    getMe
 } = require('../controllers/auth.controller');
 
 const router = express.Router();
@@ -42,6 +43,11 @@ router.get(
     '/:id/:token', 
     validate(verifySchema, 'params'),
     authVerify
+);
+
+router.get(
+    '/me',
+    getMe
 );
 
 module.exports = router;
