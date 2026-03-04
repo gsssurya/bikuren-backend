@@ -1,0 +1,140 @@
+
+rentals:
+  get:
+    tags:
+      - Rentals
+    summary: Get all rentals (must be signed in)
+    description: >
+      Retrieves all rentals.
+      Supports optional expansion using the `expand` query parameter.
+      Available expansions:
+      - `user`
+      - `detail`
+      - `bike` (must be used together with `detail`)
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: expand
+        in: query
+        required: false
+        description: >
+          Expand related resources.
+          Multiple values can be provided separated by commas.
+          Allowed values: user, detail, bike
+        schema:
+          type: string
+          example: "user,detail,bike"
+    responses:
+      '200':
+        description: Rentals retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../schemas.yaml#/Rental'
+            examples:
+              basic:
+                summary: Rentals without expansion
+                value:
+                  - id: 1
+                    user_id: 2
+                    total: "250000.00"
+                    status: "pending"
+                    created_at: "2024-01-01T10:00:00Z"
+                    updated_at: "2024-01-01T10:00:00Z"
+              expanded:
+                summary: Rentals with user, detail, and bike expanded
+                value:
+                  - id: 1
+                    user_id: 2
+                    total: "250000.00"
+                    status: "ongoing"
+                    user:
+                      id: 2
+                      name: "John Doe"
+                      email: "john@example.com"
+                      phone: "+628123456789"
+                      country: "Indonesia"
+                    detail:
+                      - id: 10
+                        rental_id: 1
+                        rental_date: "2024-01-01"
+                        finish_at: "2024-01-03"
+                        bike:
+                          id: 5
+                          name: "Honda Beat"
+                          plate_number: "B 1234 CD"
+                          price: "125000.00"
+                          status: "rented"
+      '403':
+        description: User not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '404':
+        description: Rental data is empty
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Rental is empty!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+  post:
+    tags:
+      - Rentals
+    summary: Create a new rental (must be signed in)
+    description: >
+      Create a new motorcycle rental.
+      User must be authenticated.  
+      `user_id` is automatically taken from JWT token.
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/Rental'
+          example:
+            total: 300000
+            status: pending
+    responses:
+      200:
+        description: Rental successfully created
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental added!
+                id:
+                  type: integer
+                  example: 12
+      403:
+        description: Unauthorized (not signed in)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+      500:
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+

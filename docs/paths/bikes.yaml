@@ -1,0 +1,72 @@
+bikes:
+  get:
+    summary: List all bikes
+    tags:
+      - Bikes
+    responses:
+      '200':
+        description: List of all bikes owned by BIKUREN
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../schemas.yaml#/Bikes'
+      '404':
+        description: Bike not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Bike not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+  post:
+    tags:
+      - Bikes
+    summary: Add a new bike (admin only)
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/Bikes'
+    responses:
+      '200':
+        description: Bike added
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Bike added!"
+      '403':
+        description: Forbidden / Not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+

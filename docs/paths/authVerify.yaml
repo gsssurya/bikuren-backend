@@ -1,0 +1,69 @@
+verify:
+  get:
+    tags:
+      - Auth
+    summary: Verify user's email
+    description: >
+      Verifies a user's email using the verification token sent via email.
+      Accessible only for guests (not signed in).
+    security: []  # guest only, no auth required
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the user to verify
+        schema:
+          type: integer
+          minimum: 1
+      - name: token
+        in: path
+        required: true
+        description: Verification token sent via email
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Email verification success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Verification success!"
+      '400':
+        description: Email already verified
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              alreadyVerified:
+                value:
+                  message: "Email already verified!"
+      '401':
+        description: Invalid or expired verification token/link
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              invalidLink:
+                value:
+                  message: "Invalid verification link!"
+              expiredToken:
+                value:
+                  message: "Verification token has expired!"
+              invalidToken:
+                value:
+                  message: "Invalid verification token!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"

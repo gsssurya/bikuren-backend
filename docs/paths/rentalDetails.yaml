@@ -1,0 +1,78 @@
+rentalDetails:
+  get:
+    summary: "Get rental details (must be signed in)"
+    description: >
+      Retrieve rental detail data.
+      Use the `expand=bike` query parameter to include bike information.
+    tags:
+      - Rental Details
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: expand
+        in: query
+        required: false
+        description: >
+          Relationship to be included in the response.
+          Allowed value: `bike`
+        schema:
+          type: string
+          enum:
+            - bike
+        example: bike
+    responses:
+      '200':
+        description: Rental detail data retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '../schemas.yaml#/RentalDetail'
+                  - type: object
+                    properties:
+                      bike:
+                        $ref: '../schemas.yaml#/Bikes'
+      '401':
+        description: Unauthorized - User is not authenticated
+      '404':
+        description: Rental detail is empty
+      '500':
+        description: Internal server error
+
+  post:
+    summary: "Create rental detail (must be signed in)"
+    description: >
+      Create a new rental detail record.
+      The user must be authenticated and authorized.
+      The rental end date must be later than the rental start date.
+    tags:
+      - Rental Details
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/CreateRentalDetailRequest'
+    responses:
+      '200':
+        description: Rental detail created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental detail added!
+      '400':
+        description: Bad Request - Validation failed
+      '401':
+        description: Unauthorized - User is not authenticated
+      '403':
+        description: Forbidden - User does not have permission to perform this action
+      '500':
+        description: Internal server error

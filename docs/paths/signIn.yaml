@@ -1,0 +1,57 @@
+signin:
+  post:
+    tags:
+      - Auth
+    summary: Sign in a user (guest only)
+    description: Authenticate a user using email and password. Must be a guest (not signed in). Sets a signed HTTP-only cookie upon success.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/SignIn'
+          example:
+            email: "suryanegara1209@gmail.com"
+            password: "Suryanegara1209."
+    responses:
+      '200':
+        description: Sign in success
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+              example:
+                message: "Sign in success!"
+      '400':
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            examples:
+              incorrectPassword:
+                value:
+                  message: "Incorrect password!"
+              alreadySignedIn:
+                value:
+                  message: "You are already sign in. Please sign out first!"
+      '404':
+        description: Email not registered or not verified
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Your email is not registered yet!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"

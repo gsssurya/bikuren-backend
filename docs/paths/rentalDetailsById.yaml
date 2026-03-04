@@ -1,0 +1,167 @@
+rentalDetailsById:
+  get:
+    summary: "Get rental detail by ID (must be signed in)"
+    description: >
+      Retrieve a rental detail by its ID.
+      Use the `expand=bike` query parameter to include related bike data.
+      Authentication is required to access this endpoint.
+    tags:
+      - Rental Details
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental detail ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+      - name: expand
+        in: query
+        required: false
+        description: >
+          Relationship to include in the response.
+          Allowed value: `bike`
+        schema:
+          type: string
+          enum:
+            - bike
+        example: bike
+    responses:
+      '200':
+        description: Rental detail retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../schemas.yaml#/RentalDetail'
+                - type: object
+                  properties:
+                    bike:
+                      $ref: '../schemas.yaml#/Bikes'
+      '403':
+        description: Forbidden - User is not signed in
+      '404':
+        description: Rental detail not found
+      '500':
+        description: Internal server error
+
+  put:
+    summary: "Update rental detail (admin only)"
+    description: >
+      Update an existing rental detail by its ID.
+      This endpoint requires authentication and is restricted to admin users only.
+      At least one field must be provided in the request body.
+    tags:
+      - Rental Details
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental detail ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas.yaml#/UpdateRentalDetailRequest'
+    responses:
+      '200':
+        description: Rental detail updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental detail updated!
+      '400':
+        description: Bad Request - Validation failed or empty payload
+      '403':
+        description: Forbidden - User is not authenticated or not authorized
+      '404':
+        description: Update failed. Rental detail not found
+      '500':
+        description: Internal server error
+
+  delete:
+    summary: "Delete rental detail (admin only)"
+    description: >
+      Delete a rental detail by its ID.
+      This endpoint requires authentication and is restricted to admin users only.
+    tags:
+      - Rental Details
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental detail ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      '200':
+        description: Rental detail deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental detail deleted!
+      '403':
+        description: Forbidden - User is not authenticated or not authorized
+      '404':
+        description: Delete failed. Rental detail not found
+      '500':
+        description: Internal server error
+
+  patch:
+    summary: "Restore rental detail (admin only)"
+    description: >
+      Restore a soft-deleted rental detail by its ID.
+      This endpoint requires authentication and is restricted to admin users only.
+    tags:
+      - Rental Details
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental detail ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      '200':
+        description: Rental detail restored successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental detail by ID = 12 restored!
+      '403':
+        description: Forbidden - User is not authenticated or not authorized
+      '404':
+        description: Restore failed. Rental detail not found
+      '500':
+        description: Internal server error
+

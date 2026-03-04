@@ -1,0 +1,334 @@
+SignUp:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 100
+      description: Full name of the user
+    email:
+      type: string
+      format: email
+      description: User's email address
+    password:
+      type: string
+      minLength: 8
+      maxLength: 30
+      description: >
+        Password must contain at least 1 uppercase letter, 1 number, 
+        and 1 special character
+      pattern: "^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$"
+    phone:
+      type: string
+      description: User's phone number
+    country:
+      type: string
+      description: Country of residence
+    passport:
+      type: string
+      description: Passport number
+    address:
+      type: string
+      description: Residential address
+    room_number:
+      type: string
+      description: Optional room number
+  required:
+    - name
+    - email
+    - password
+    - phone
+    - country
+    - passport
+    - address
+  example:
+    name: "John Doe"
+    email: "johndoe@example.com"
+    password: "Password1!"
+    phone: "+628123456789"
+    country: "Indonesia"
+    passport: "A12345678"
+    address: "Jl. Example No.1, Jakarta"
+    room_number: "101A"
+
+
+
+SignIn:
+  type: object
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's registered email
+    password:
+      type: string
+      minLength: 6
+      description: User's password
+  required:
+    - email
+    - password
+  example:
+    email: "user@example.com"
+    password: "Mypassword123."
+
+
+Users:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 150
+      description: Full name of the user
+    email:
+      type: string
+      format: email
+      description: User's email address
+    password:
+      type: string
+      minLength: 8
+      maxLength: 30
+      description: >
+        Password must contain at least 1 uppercase letter, 1 number, 
+        and 1 special character
+      pattern: "^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$"
+    phone:
+      type: string
+      pattern: "^\\+"
+      minLength: 9
+      maxLength: 20
+      description: Phone number must start with '+' followed by country code (e.g., +62...)
+    country:
+      type: string
+      minLength: 3
+      maxLength: 50
+      description: Country of residence
+    passport:
+      type: string
+      maxLength: 25
+      description: Passport number
+    address:
+      type: string
+      maxLength: 255
+      description: Residential address
+    room_number:
+      type: string
+      maxLength: 10
+      description: Optional room number
+    role:
+      type: string
+      description: User role
+      enum:
+        - admin
+        - member
+  required:
+    - name
+    - email
+    - password
+    - phone
+    - country
+  example:
+    name: "Jane Doe"
+    email: "janedoe@example.com"
+    password: "Password1!"
+    phone: "+628123456789"
+    country: "Indonesia"
+    passport: "B98765432"
+    address: "Jl. Example No.2, Jakarta"
+    room_number: "102B"
+    role: "member"
+
+
+Bikes:
+  type: object
+  required:
+    - name
+    - plate_number
+    - price
+  properties:
+    id:
+      type: integer
+      readOnly: true
+      example: 1
+      description: Auto-incremented ID of the bike
+    name:
+      type: string
+      maxLength: 100
+      description: Name of the bike
+      example: "Honda Vario 150"
+    plate_number:
+      type: string
+      maxLength: 20
+      description: Unique plate number of the bike
+      example: "DK 1234 AB"
+    price:
+      type: number
+      format: double
+      description: Rental price per day
+      example: 150000
+    status:
+      type: string
+      enum:
+        - available
+        - rented
+        - maintenance
+      description: Current status of the bike
+      example: available
+    created_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: Timestamp when the bike was created
+    updated_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: Timestamp when the bike was last updated
+
+BikeUpdate:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 100
+    plate_number:
+      type: string
+      minLength: 1
+      maxLength: 20
+    price:
+      type: number
+      maximum: 1000000000
+    status:
+      type: string
+  minProperties: 1
+  example:
+    name: "Road Bike"
+    price: 3000000
+    status: "unavailable"
+  
+RentalDetail:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 10
+
+    rental_id:
+      type: integer
+      example: 1
+
+    bike_id:
+      type: integer
+      example: 5
+
+    rental_date:
+      type: string
+      format: date
+      example: "2024-01-01"
+
+    finish_at:
+      type: string
+      format: date
+      example: "2024-01-03"
+
+    created_at:
+      type: string
+      format: date-time
+      example: "2024-01-01T09:00:00Z"
+
+    updated_at:
+      type: string
+
+
+Rental:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 1
+
+    user_id:
+      type: integer
+      example: 2
+
+    total:
+      type: string
+      format: decimal
+      example: "250000.00"
+
+    status:
+      type: string
+      enum:
+        - pending
+        - ongoing
+        - finished
+        - cancelled
+      example: pending
+
+    created_at:
+      type: string
+      format: date-time
+      example: "2024-01-01T10:00:00Z"
+
+    updated_at:
+      type: string
+      format: date-time
+      example: "2024-01-01T10:00:00Z"
+
+    user:
+      $ref: '#/Users'
+
+    detail:
+      type: array
+      items:
+        $ref: '#/RentalDetail'
+
+ErrorResponse:
+  type: object
+  required:
+    - message
+  properties:
+    message:
+      type: string
+      description: Describes the error that occurred
+      example: "Resource not found!"
+
+
+CreateRentalDetailRequest:
+  type: object
+  required:
+    - rental_id
+    - bike_id
+    - rental_date
+    - finish_at
+  properties:
+    rental_id:
+      type: integer
+      example: 10
+    bike_id:
+      type: integer
+      example: 3
+    rental_date:
+      type: string
+      format: date
+      description: Must be today or a future date
+      example: "2026-01-20"
+    finish_at:
+      type: string
+      format: date
+      description: Must be later than rental_date
+      example: "2026-01-22"
+
+
+UpdateRentalDetailRequest:
+  type: object
+  minProperties: 1
+  properties:
+    rental_date:
+      type: string
+      format: date
+      description: Must be today or a future date
+      example: "2026-01-21"
+    finish_at:
+      type: string
+      format: date
+      description: Must be later than rental_date
+      example: "2026-01-23"

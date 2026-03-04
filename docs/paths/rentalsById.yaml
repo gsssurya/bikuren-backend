@@ -1,0 +1,224 @@
+rentalsById:
+  get:
+    tags:
+      - Rentals
+    summary: Get rental by ID (must be signed in)
+    description: >
+      Get detailed rental data by ID.
+      Supports expand query for related resources (user, detail, bike).
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the user to delete
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+
+      - name: expand
+        in: query
+        description: Expand related data (user, detail, bike)
+        required: false
+        schema:
+          type: string
+          example: "user,detail,bike"
+
+    responses:
+      '200':
+        description: Rental data retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/Rental'
+
+      '403':
+        description: User not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "You are not sign in yet!"
+      '404':
+        description: Rental data is empty
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Rental not found!"
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+            example:
+              message: "Database connection failed"
+
+  put:
+    tags:
+      - Rentals
+    summary: Update rental by ID (admin only)
+    description: >
+      Update rental data by rental ID.
+      Only admin users are allowed to access this endpoint.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+              $ref: '../schemas.yaml#/Rental'
+          example:
+            total: 450000
+            status: ongoing
+    responses:
+      200:
+        description: Rental successfully updated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental Updated!
+      403:
+        description: Forbidden or not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+      404:
+        description: Rental not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+      500:
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+
+
+  delete:
+    tags:
+      - Rentals
+    summary: Delete rental by ID (admin only)
+    description: >
+      Delete a rental by its ID.
+      This action is restricted to admin users only.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental ID
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      200:
+        description: Rental successfully deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental deleted!
+      403:
+        description: Forbidden or not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+      404:
+        description: Rental not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Delete failed. Rental not found!
+      500:
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+
+  patch:
+    tags:
+      - Rentals
+    summary: Restore deleted rental by ID (admin only)
+    description: >
+      Restore a previously deleted (soft-deleted) rental.
+      Only admin users are allowed to perform this action.
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Rental ID to restore
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+    responses:
+      200:
+        description: Rental successfully restored
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Rental by ID = 5 restored!
+      403:
+        description: Forbidden or not signed in
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+      404:
+        description: Rental not found or already restored
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Restore failed. Rental not found!
+      500:
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/ErrorResponse'
+
+
