@@ -14,7 +14,16 @@ const checkEmail = async (req, res, next) => {
 
         if(!user) return next();
 
-        if(user.is_verified) return res.status(409).json({ message:'Your email is already registered!' });
+        if(user.is_verified) return res.status(409).json({ // Menggunakan 409 (Conflict) atau 401 sesuai selera
+            success: false,
+            error: {
+                type: "VALIDATION_ERROR",
+                details: [{
+                    field: 'email',
+                    message: 'Your email is already registered'
+                }]
+            }
+        });
 
         const salt = bcrypt.genSaltSync(10);
         const verificationToken = uuidv4();
@@ -40,13 +49,13 @@ const checkEmail = async (req, res, next) => {
             }
         })
 
-        await sendEmail(user.email, `http://localhost:3000/auth/${user.id}/${verificationToken}`);
+        await sendEmail(user.email, `http://192.168.1.15:5173/verify/${user.id}/${verificationToken}`, user.name);
 
-        res.status(200).json({
+        return res.status(200).json({
             id: user.id,
             token: verificationToken,
             message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify",
-            verifivationLink: `http://localhost:3000/auth/${user.id}/${verificationToken}`
+            verifivationLink: `http://192.168.1.15:5173/verify/${user.id}/${verificationToken}`
         });
 
     } catch (e) {

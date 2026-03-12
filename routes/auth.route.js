@@ -13,7 +13,8 @@ const {
     signIn,
     signOut,
     authVerify,
-    getMe
+    getMe,
+    checkVerify
 } = require('../controllers/auth.controller');
 
 const router = express.Router();
@@ -34,8 +35,7 @@ router.post(
 );
 
 router.post(
-    '/signout', 
-    auth,
+    '/signout',
     signOut
 );
 
@@ -48,6 +48,11 @@ router.get(
 router.get(
     '/me',
     getMe
+);
+
+router.post(
+    '/check',
+    checkVerify
 );
 
 module.exports = router;

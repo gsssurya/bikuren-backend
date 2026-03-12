@@ -6,31 +6,74 @@ const { v4: uuidv4 } = require('uuid');
 
 const signUp = async (req, res) => {
     try {
-        const { password, ...rest } = req.body
+        const { email, password, ...rest } = req.body;
         const salt = bcrypt.genSaltSync(10);
         const verificationToken = uuidv4();
-        const verificationTokenHash = bcrypt.hashSync(verificationToken, salt);
-        const verificationTokenExpiry = new Date(
-            Date.now() + (60 * 60 * 1000)
-        );
         const passwordHash = bcrypt.hashSync(password, salt);
+        
         const userPayload = {
             ...rest,
+            email,
             password: passwordHash,
-            verification_token: verificationTokenHash,
-            verification_token_expiry: verificationTokenExpiry
+            verification_token: bcrypt.hashSync(verificationToken, salt),
+            verification_token_expiry: new Date(Date.now() + (60 * 60 * 1000 * 24))
         };
+
         const user = await User.create(userPayload);
-        await sendEmail(userPayload.email, `http://localhost:3000/auth/${user.id}/${verificationToken}`);
+        
+        // Kirim Email
+        await sendEmail(email, `http://192.168.1.15:5173/verify/${user.id}/${verificationToken}`, userPayload.name);
+
         res.status(200).json({
+            success: true,
             id: user.id,
-            token: verificationToken,
-            message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify",
-            verifivationLink: `http://localhost:3000/auth/${user.id}/${verificationToken}`
+            message: "Check your email for verification link."
         });
+
     } catch (e) {
-        res.status(500).json({ message: `${e}` });
+        
+        res.status(500).json({ 
+            success: false, 
+            error: { type: "SERVER_ERROR", details: [{ field: 'server', message: e}] } 
+        });
     }
+};
+
+const checkVerify = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({
+      where: { email }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "User tidak ditemukan"
+      });
+    }
+
+    if (user.is_verified) {
+      return res.status(200).json({
+        status: "success",
+        verified: true,
+        message: "User sudah terverifikasi"
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      verified: false,
+      message: "User belum verifikasi email"
+    });
+
+  } catch (e) {
+    res.status(500).json({
+      status: "error",
+      message: "Server error!"
+    });
+  }
 };
 
 const authVerify = async (req, res) => {
@@ -49,21 +92,25 @@ const authVerify = async (req, res) => {
         });
 
         if(!data) return res.status(401).json({ 
-            message: 'Invalid verification link!' 
+            message: 'Invalid verification link!',
+            status: 'invalid-token'
         });
 
         if(data.is_verified) return res.status(400).json({ 
-            message: 'Email already verified!' 
+            message: 'Email already verified!',
+            status: 'already'
         });
 
         if(data.verification_token_expiry < new Date()) return res.status(401).json({ 
-            message: 'Verification token has expired!' 
+            message: 'Verification token has expired!',
+            status: 'expired'
         });
 
         const isTokenValid = bcrypt.compareSync(token, data.verification_token);
 
         if(!isTokenValid) return res.status(401).json({ 
-            message: 'Invalid verification token!' 
+            message: 'Invalid verification token!',
+            status: 'invalid-token'
         });
 
         data.is_verified = true;
@@ -72,7 +119,10 @@ const authVerify = async (req, res) => {
 
         await data.save();
 
-        res.status(200).json({ message: 'Verification success!' });
+        res.status(200).json({ 
+            message: 'Verification success!',
+            status: 'success'
+        });
 
     } catch (e) {
         res.status(500).json({ message: `${e}` });
@@ -109,13 +159,14 @@ const signIn = async (req, res) => {
                 maxAge = 60 * 1000 * 60;
                 jwtExp = '1h';
             }
+
             var token = jwt.sign({
                 id: data.id,
                 role: data.role
             },
                 process.env.JWT_SECRET,
             {
-                expiresIn: "1h" // ⬅ WAJIB kalau mau ada exp
+                expiresIn: jwtExp
             }
             );
 
@@ -127,6 +178,7 @@ const signIn = async (req, res) => {
                 maxAge,
                 signed: true
             });
+
             return res.status(200).json({
                 success: true,
                 data: {
@@ -138,6 +190,7 @@ const signIn = async (req, res) => {
                 },
                 remember
             });
+
         } else {
             return res.status(401).json({
                 success: false,
@@ -170,7 +223,7 @@ const getMe = (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     res.json({ userId: decoded.id });
   } catch {
-    res.status(401).json({ message: "Invalid token" });
+    res.status(401).json({ message: "Invalid token", status: 'expired' });
   }
 }
 
@@ -180,5 +233,6 @@ module.exports = {
     signIn,
     signOut,
     authVerify,
-    getMe
+    getMe,
+    checkVerify
 };

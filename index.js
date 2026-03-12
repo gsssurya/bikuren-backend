@@ -40,7 +40,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://192.168.1.39:5173",
+    origin: "http://192.168.1.15:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   }),

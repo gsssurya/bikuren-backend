@@ -6,15 +6,15 @@ const validate = (schema, property = "body") => {
     });
 
     if (error) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          type: "VALIDATION_ERROR",
-          details: error.details.map(e => ({
-            field: e.path.join("."),
-            message: e.message
-          }))
-        }
+      return res.status(401).json({
+          success: false,
+          error: {
+              type: "VALIDATION_ERROR",
+              details: error.details.map(err => ({
+                  field: err.context.key,
+                  message: err.message.replace(/"/g, '') // Menghilangkan tanda kutip dari pesan Joi
+              }))
+          }
       });
     }
 

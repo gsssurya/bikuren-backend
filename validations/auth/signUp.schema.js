@@ -3,38 +3,22 @@ const Joi = require('joi');
 
 const signUpSchema = Joi.object({
     name: userSchema
-        .extract('name')
-        .required(),
+        .extract('name'),
     email: userSchema
-        .extract('email')
-        .required(),
+        .extract('email'),
     password: userSchema
-        .extract('password')
-        .min(8)
-        .max(30)
-        .pattern(
-            /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/
-        )
-        .messages({
-            'string.pattern.base':
-                'Password must contain at least 1 uppercase letter, 1 number, and 1 special character',
-            'string.min': 'Password must be at least 8 characters long'
-        })
-        .required(),
+        .extract('password'),
     phone: userSchema
-        .extract('phone')
-        .required(),
+        .extract('phone'),
     country: userSchema
-        .extract('country')
-        .required(),
+        .extract('country'),
     passport: userSchema
-        .extract('passport')
-        .required(),
-    address: userSchema
-        .extract('address')
-        .required(),
+        .extract('passport'),
     room_number: userSchema
         .extract('room_number')
+        .allow('', null),
+    address: userSchema
+        .extract('address'),
 });
 
 module.exports = signUpSchema;
