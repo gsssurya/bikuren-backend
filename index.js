@@ -10,6 +10,7 @@ const rentalRoute = require("./routes/rental.route");
 const RentalDetailRoute = require("./routes/rentalDetail.route");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const errorMiddleware = require("./middlewares/error.middleware");
 const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
 
@@ -40,7 +41,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://192.168.1.15:5173",
+    origin: "http://192.168.110.15:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   }),
@@ -51,6 +52,7 @@ app.use("/users", userRoute);
 app.use("/bikes", bikeRoute);
 app.use("/rentals", rentalRoute);
 app.use("/rental-details", RentalDetailRoute);
+app.use(errorMiddleware);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Welcome to Bikuren Backend!" });

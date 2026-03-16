@@ -49,13 +49,13 @@ const checkEmail = async (req, res, next) => {
             }
         })
 
-        await sendEmail(user.email, `http://192.168.1.15:5173/verify/${user.id}/${verificationToken}`, user.name);
+        await sendEmail(user.email, `http://192.168.110.15:5173/verify/${user.id}/${verificationToken}`, user.name);
 
         return res.status(200).json({
             id: user.id,
             token: verificationToken,
             message: "To verify your account, please check your email, click the verification link, or manually use the ID and token at /auth/verify",
-            verifivationLink: `http://192.168.1.15:5173/verify/${user.id}/${verificationToken}`
+            verifivationLink: `http://192.168.110.15:5173/verify/${user.id}/${verificationToken}`
         });
 
     } catch (e) {

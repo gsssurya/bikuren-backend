@@ -1,11 +1,11 @@
 const express = require('express');
-const auth = require('../middleware/auth.middleware');
-const authorize = require('../middleware/authorize.middleware');
-const validate = require('../middleware/validate.middleware');
+const auth = require('../middlewares/auth.middleware');
+const authorize = require('../middlewares/authorize.middleware');
+const validate = require('../middlewares/validate.middleware');
 const getByIdSchema = require('../validations/id.schema');
 const bikeSchema = require('../validations/bike/bike.schema');
 const updateBikeSchema = require('../validations/bike/bike.update.schema');
-const uploadSingle = require('../middleware/upload.middleware');
+const uploadSingle = require('../middlewares/upload.middleware');
 
 const { 
     getBikes,

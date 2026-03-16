@@ -1,160 +1,72 @@
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const userService = require("../services/userService");
+const catchAsync = require("../utils/CatchAsync");
 
-const getUsers = async (req, res) => {
-    try {
-        const data = await User.findAll({
-            where: { 
-                is_verified: true 
-            },
-            attributes: { 
-                exclude: [
-                    'password',
-                    'deleted_at',
-                    'is_verified',
-                    'verification_token',
-                    'verification_token_expiry'
-                ]},
-        });
-        if(data.length === 0) return res.status(404).json({ message: 'User is empty!' })
-        res.status(200).json(data);
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
-    }
-};
+const getUsers = catchAsync(async (req, res) => {
+  const users = await userService.getUsers();
+    res.status(200).json({
+        status: "success",
+        data: users,
+    });
+});
 
-const getUserById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const data = await User.findOne({
-            where: { 
-                id,
-                is_verified: true 
-            },
-            attributes: {  exclude: [
-                    'password',
-                    'deleted_at',
-                    'is_verified',
-                    'verification_token',
-                    'verification_token_expiry'
-                ]},
-        });
-        if(!data) return res.status(404).json({ message: 'User not found!' })
-        res.status(200).json(data);
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
-    }
-};
+const getUserById = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const user = await userService.getUserById(id);
+    res.status(200).json({
+        status: "success",
+        data: user,
+    });
+})
 
-const createUser = async (req, res) => {
-    try {
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(req.body.password, salt);
-        req.body.password = hash;
-        await User.create(req.body);
-        res.status(200).json({ message: 'User added!' })
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
-    }
-};
+const createUser = catchAsync( async (req, res) => {
+    const user = await userService.createUser(req.body);
+    res.status(201).json({
+        status: "success",
+        data: user,
+    });
+});
 
-const updateUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { email, password, ...rest} = req.body
-        const salt = bcrypt.genSaltSync(10);
-        let userPayload = {
-            ...rest,
-        }
-        if(password){
-           userPayload.password = bcrypt.hashSync(password, salt);
-        }
-        if(email){
-            userPayload.email = email;
-            userPayload.is_verified = false;
-        }
-        const [affectedCount] = await User.update(userPayload, {
-            where: {
-                id,
-                is_verified: true
-            }
-        });
-        if(affectedCount === 0) {
-            return res.status(404).json({ 
-                message: 'Update failed. User not found or not verified!'
-            });
-        }
-        res.status(200).json({ message: 'User updated!' });
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
-    }
-};
+const updateUser = catchAsync( async (req, res) => {
+    const { id } = req.params;
+    await userService.updateUser(id, req.body);
+    res.status(200).json({
+        status: "success",
+        message: "User updated successfully"
+    })
+})
 
-const deleteUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const affectedCount = await User.destroy({
-            where: {
-                id,
-            }
-        });
-        if(affectedCount === 0) {
-            return res.status(404).json({ 
-                message: 'Delete failed. User not found or not verified!'
-            });
-        }
-        res.status(200).json({ message: 'User deleted!' });
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
-    }
-};
+const deleteUser = catchAsync( async (req, res) => {
+    const { id } = req.params;
+    await userService.deleteUser(id, req.user.id);
+    res.status(200).json({
+        status: "success",
+        message: "User deleted successfully"
+    })
+})
 
-const restoreUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const affectedCount = await User.restore({
-            where: {
-                id,
-            }
-        });
-        if(affectedCount === 0) {
-            return res.status(404).json({ 
-                message: 'Restore failed. User not found or not verified!'
-            });
-        }
-        res.status(200).json({ message: `User by ID = ${id} restored!` })
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
-    }
-};
+const restoreUser = catchAsync( async (req, res) => {
+    const { id } = req.params;
+    await userService.restoreUser(id);
+    res.status(200).json({
+        status: "success",
+        message: `User by ID = ${id} restored!`
+    })  
+})
 
-const uploadProfileFoto = async (req, res, next) => {
-    try {
-        const { id } = req.user;
-        const imageUrl = `uploads/profiles/${req.file.filename}`;
-        const [affectedCount] = await User.update({
-            image: imageUrl
-        }, {
-            where: {
-                id,
-                is_verified: true
-            }
-        })
-        if(affectedCount === 0) {
-            return res.status(404).json({ 
-                message: 'Upload failed. User not found or not verified!'
-            });
-        };
-        res.status(200).json({
-            message: 'Upload success!',
-            userId: id,
-            file: req.file.filename,
-            url: imageUrl
-        });
-    } catch (e) {
-        res.status(500).json({ message: `${e}` });
+const uploadFoto = catchAsync( async (req, res) => {
+    const { id } = req.user;
+    if (!req.file) {
+        throw new AppError("Image is required", 400);
     }
-};
+    const imageUrl = `uploads/profiles/${req.file.filename}`;
+    await userService.uploadFoto(id, {
+        image: imageUrl
+    });
+    res.status(200).json({
+        status: "success",
+        message: `Upload success!`
+    })  
+})
 
 module.exports = {
     getUsers,
@@ -163,5 +75,5 @@ module.exports = {
     deleteUser,
     restoreUser,
     createUser,
-    uploadProfileFoto
+    uploadFoto
 }

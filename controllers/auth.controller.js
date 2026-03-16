@@ -22,7 +22,7 @@ const signUp = async (req, res) => {
         const user = await User.create(userPayload);
         
         // Kirim Email
-        await sendEmail(email, `http://192.168.1.15:5173/verify/${user.id}/${verificationToken}`, userPayload.name);
+        await sendEmail(email, `http://192.168.110.15:5173/verify/${user.id}/${verificationToken}`, userPayload.name);
 
         res.status(200).json({
             success: true,

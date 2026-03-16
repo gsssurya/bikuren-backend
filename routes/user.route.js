@@ -1,46 +1,33 @@
 const express = require('express');
-const auth = require('../middleware/auth.middleware');
-const authorize = require('../middleware/authorize.middleware');
-const validate = require('../middleware/validate.middleware');
+const auth = require('../middlewares/auth.middleware');
+const authorize = require('../middlewares/authorize.middleware');
+const validate = require('../middlewares/validate.middleware');
 const getByIdSchema = require('../validations/id.schema');
 const updateUserSchema = require('../validations/user/user.update.schema');
 const userSchema = require('../validations/user/user.schema');
-const checkEmail = require('../middleware/checkEmail.middleware');
-const uploadSingle = require('../middleware/upload.middleware');
-
-
-const {
-    getUsers,
-    getUserById,
-    updateUser,
-    deleteUser,
-    restoreUser,
-    createUser,
-    uploadProfileFoto,
-} = require('../controllers/user.controller');
-
+const uploadSingle = require('../middlewares/upload.middleware');
+const userController = require("../controllers/user.controller");
 const router = express.Router();
 
 router.get(
-    '/',
+    "/",
     auth,
-    getUsers
+    userController.getUsers
 );
 
 router.get(
-    '/:id',
-    auth,
-    validate(getByIdSchema,'params'),
-    getUserById
+    "/:id", 
+    auth, 
+    validate(getByIdSchema, "params"),
+    userController.getUserById
 );
 
 router.post(
-    '/',
+    "/",
     auth,
-    authorize('admin'),
-    checkEmail,
+    authorize(['admin']),
     validate(userSchema),
-    createUser
+    userController.createUser
 )
 
 router.put(
@@ -48,15 +35,15 @@ router.put(
     auth,
     validate(getByIdSchema, 'params'),
     validate(updateUserSchema),
-    updateUser
+    userController.updateUser
 );
 
 router.delete(
     '/:id',
     auth, 
-    authorize('admin'), 
+    authorize(['admin']), 
     validate(getByIdSchema,'params'),
-    deleteUser
+    userController.deleteUser
 );
 
 router.patch(
@@ -64,14 +51,14 @@ router.patch(
     auth, 
     authorize('admin'),
     validate(getByIdSchema,'params'),
-    restoreUser
+    userController.restoreUser
 );
 
 router.post(
     '/upload',
     auth,
     uploadSingle(),
-    uploadProfileFoto
+    userController.uploadFoto
 );
 
 module.exports = router;
